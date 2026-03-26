@@ -11,7 +11,7 @@ export const getSession = () => {
 
 const setSession = (user) => {
   localStorage.setItem(SESSION_KEY, JSON.stringify(user));
-  setUserContext(user.id);
+  setUserContext(user.id, user.role);
 };
 
 const clearSession = () => {
@@ -55,7 +55,7 @@ export const signOut = async () => {
 export const getCurrentUser = () => {
   const session = getSession();
   if (session) {
-    setUserContext(session.id);
+    setUserContext(session.id, session.role);
   }
   return session;
 };
@@ -140,6 +140,6 @@ export const updatePassword = async (userId, newPassword) => {
 export const initializeAuth = () => {
   const user = getCurrentUser();
   if (user) {
-    setUserContext(user.id);
+    setUserContext(user.id, user.role);
   }
 };

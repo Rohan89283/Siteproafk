@@ -10,11 +10,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Helper to set user context for RLS policies
-export const setUserContext = async (userId) => {
-  if (!userId) return;
+export const setUserContext = async (userId, userRole) => {
+  if (!userId || !userRole) return;
 
   const { error } = await supabase.rpc('set_user_context', {
-    user_id: userId
+    user_id: userId,
+    user_role: userRole
   });
 
   if (error) console.error('Error setting user context:', error);
