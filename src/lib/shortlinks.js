@@ -1,136 +1,156 @@
-import { supabase } from './supabase'
+import { supabase } from './supabase';
+import { getCurrentUser, isAdmin } from './auth';
 
-// Shortlist Operations
-export const createShortlist = async (userId, name, description = '') => {
-  try {
-    const { data, error } = await supabase
-      .from('shortlists')
-      .insert([
-        {
-          user_id: userId,
-          name,
-          description,
-        },
-      ])
-      .select()
-      .single()
-
-    if (error) throw error
-    return { data, error: null }
-  } catch (error) {
-    return { data: null, error }
+// Generate random short code
+const generateShortCode = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-}
+  return code;
+};
 
-export const getShortlists = async (userId) => {
+// ============ SHORTLISTS ============
+
+export const getShortlists = async () => {
   try {
     const { data, error } = await supabase
       .from('shortlists')
       .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false });
 
-    if (error) throw error
-    return { data, error: null }
+    if (error) throw error;
+    return { data, error: null };
   } catch (error) {
-    return { data: null, error }
+    return { data: null, error };
   }
-}
+};
 
-export const updateShortlist = async (id, updates) => {
+export const createShortlist = async (name) => {
+  try {
+    const user = getCurrentUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data, error } = await supabase
+      .from('shortlists')
+      .insert([{ name, user_id: user.id }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+export const updateShortlist = async (id, name) => {
   try {
     const { data, error } = await supabase
       .from('shortlists')
-      .update(updates)
+      .update({ name })
       .eq('id', id)
       .select()
-      .single()
+      .single();
 
-    if (error) throw error
-    return { data, error: null }
+    if (error) throw error;
+    return { data, error: null };
   } catch (error) {
-    return { data: null, error }
+    return { data: null, error };
   }
-}
+};
 
 export const deleteShortlist = async (id) => {
   try {
     const { error } = await supabase
       .from('shortlists')
       .delete()
-      .eq('id', id)
+      .eq('id', id);
 
-    if (error) throw error
-    return { error: null }
+    if (error) throw error;
+    return { error: null };
   } catch (error) {
-    return { error }
+    return { error };
   }
-}
+};
 
-// Shortlink Operations
-export const createShortlink = async (shortlistId, userId, originalUrl, shortCode, title = '') => {
+// ============ SHORTLINKS ============
+
+export const getShortlinks = async (shortlistId = null) => {
   try {
-    // Check if short code already exists
-    const { data: existing } = await supabase
+    let query = supabase
       .from('shortlinks')
-      .select('short_code')
-      .eq('short_code', shortCode)
-      .single()
+      .select('*')
+      .order('created_at', { ascending: false });
 
-    if (existing) {
-      throw new Error('Short code already exists')
+    if (shortlistId) {
+      query = query.eq('shortlist_id', shortlistId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+export const getShortlinkByCode = async (code) => {
+  try {
+    const { data, error } = await supabase
+      .from('shortlinks')
+      .select('*')
+      .eq('short_code', code)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+export const createShortlink = async (shortlistId, destinationUrl, customCode = null) => {
+  try {
+    const user = getCurrentUser();
+    if (!user) throw new Error('Not authenticated');
+
+    // Generate code if not provided
+    let code = customCode;
+    if (!code) {
+      // Generate unique code
+      let isUnique = false;
+      while (!isUnique) {
+        code = generateShortCode();
+        const { data: existing } = await supabase
+          .from('shortlinks')
+          .select('id')
+          .eq('short_code', code)
+          .maybeSingle();
+        if (!existing) isUnique = true;
+      }
     }
 
     const { data, error } = await supabase
       .from('shortlinks')
-      .insert([
-        {
-          shortlist_id: shortlistId,
-          user_id: userId,
-          original_url: originalUrl,
-          short_code: shortCode,
-          title,
-        },
-      ])
+      .insert([{
+        short_code: code,
+        original_url: destinationUrl,
+        shortlist_id: shortlistId,
+        user_id: user.id
+      }])
       .select()
-      .single()
+      .single();
 
-    if (error) throw error
-    return { data, error: null }
+    if (error) throw error;
+    return { data, error: null };
   } catch (error) {
-    return { data: null, error }
+    return { data: null, error };
   }
-}
-
-export const getShortlinks = async (shortlistId) => {
-  try {
-    const { data, error } = await supabase
-      .from('shortlinks')
-      .select('*')
-      .eq('shortlist_id', shortlistId)
-      .order('created_at', { ascending: false })
-
-    if (error) throw error
-    return { data, error: null }
-  } catch (error) {
-    return { data: null, error }
-  }
-}
-
-export const getShortlinkByCode = async (shortCode) => {
-  try {
-    const { data, error } = await supabase
-      .from('shortlinks')
-      .select('*')
-      .eq('short_code', shortCode)
-      .single()
-
-    if (error) throw error
-    return { data, error: null }
-  } catch (error) {
-    return { data: null, error }
-  }
-}
+};
 
 export const updateShortlink = async (id, updates) => {
   try {
@@ -139,138 +159,108 @@ export const updateShortlink = async (id, updates) => {
       .update(updates)
       .eq('id', id)
       .select()
-      .single()
+      .single();
 
-    if (error) throw error
-    return { data, error: null }
+    if (error) throw error;
+    return { data, error: null };
   } catch (error) {
-    return { data: null, error }
+    return { data: null, error };
   }
-}
+};
+
+export const toggleShortlink = async (id, isActive) => {
+  return updateShortlink(id, { is_active: isActive });
+};
 
 export const deleteShortlink = async (id) => {
   try {
     const { error } = await supabase
       .from('shortlinks')
       .delete()
-      .eq('id', id)
+      .eq('id', id);
 
-    if (error) throw error
-    return { error: null }
+    if (error) throw error;
+    return { error: null };
   } catch (error) {
-    return { error }
+    return { error };
   }
-}
+};
 
-export const incrementClicks = async (shortlinkId) => {
+export const incrementClicks = async (id) => {
   try {
-    const { data, error } = await supabase.rpc('increment_clicks', {
-      shortlink_id: shortlinkId,
-    })
-
-    if (error) throw error
-    return { data, error: null }
-  } catch (error) {
-    return { data: null, error }
-  }
-}
-
-// Admin Operations
-export const getAllUsers = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (error) throw error
-    return { data, error: null }
-  } catch (error) {
-    return { data: null, error }
-  }
-}
-
-export const getAllShortlinks = async () => {
-  try {
-    const { data, error } = await supabase
+    // Get current click count
+    const { data: link } = await supabase
       .from('shortlinks')
-      .select(`
-        *,
-        shortlists (
-          name,
-          user_id
-        ),
-        users (
-          email
-        )
-      `)
-      .order('created_at', { ascending: false })
+      .select('click_count')
+      .eq('id', id)
+      .single();
 
-    if (error) throw error
-    return { data, error: null }
+    if (!link) return;
+
+    // Increment
+    await supabase
+      .from('shortlinks')
+      .update({ click_count: (link.click_count || 0) + 1 })
+      .eq('id', id);
+
   } catch (error) {
-    return { data: null, error }
+    console.error('Error incrementing clicks:', error);
   }
-}
+};
 
-export const updateUserRole = async (userId, role) => {
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .update({ role })
-      .eq('id', userId)
-      .select()
-      .single()
-
-    if (error) throw error
-    return { data, error: null }
-  } catch (error) {
-    return { data: null, error }
-  }
-}
+// ============ STATS ============
 
 export const getStats = async () => {
   try {
-    // Get total users
-    const { count: usersCount, error: usersError } = await supabase
-      .from('users')
-      .select('*', { count: 'exact', head: true })
+    if (!isAdmin()) {
+      throw new Error('Only admins can view stats');
+    }
 
-    if (usersError) throw usersError
+    // Get all users count
+    const { count: usersCount } = await supabase
+      .from('app_users')
+      .select('*', { count: 'exact', head: true });
 
-    // Get total shortlists
-    const { count: shortlistsCount, error: shortlistsError } = await supabase
-      .from('shortlists')
-      .select('*', { count: 'exact', head: true })
-
-    if (shortlistsError) throw shortlistsError
-
-    // Get total shortlinks
-    const { count: shortlinksCount, error: shortlinksError } = await supabase
+    // Get all shortlinks count
+    const { count: shortlinksCount } = await supabase
       .from('shortlinks')
-      .select('*', { count: 'exact', head: true })
-
-    if (shortlinksError) throw shortlinksError
+      .select('*', { count: 'exact', head: true });
 
     // Get total clicks
-    const { data: clicksData, error: clicksError } = await supabase
+    const { data: links } = await supabase
       .from('shortlinks')
-      .select('clicks')
+      .select('click_count');
 
-    if (clicksError) throw clicksError
-
-    const totalClicks = clicksData.reduce((sum, link) => sum + (link.clicks || 0), 0)
+    const totalClicks = links?.reduce((sum, link) => sum + (link.click_count || 0), 0) || 0;
 
     return {
       data: {
         totalUsers: usersCount || 0,
-        totalShortlists: shortlistsCount || 0,
         totalShortlinks: shortlinksCount || 0,
-        totalClicks,
+        totalClicks
       },
-      error: null,
-    }
+      error: null
+    };
   } catch (error) {
-    return { data: null, error }
+    return { data: null, error };
   }
-}
+};
+
+// Get all users (admin only)
+export const getAllUsers = async () => {
+  try {
+    if (!isAdmin()) {
+      throw new Error('Only admins can view all users');
+    }
+
+    const { data, error } = await supabase
+      .from('app_users')
+      .select('id, username, role, created_at')
+      .order('created_at', { ascending: false});
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getShortlinks, updateShortlink, deleteShortlink } from '../lib/localStorage'
+import { getShortlinks, toggleShortlink, deleteShortlink } from '../lib/shortlinks'
 import './AdminShortlinks.css'
 
 function AdminShortlinks() {
@@ -12,30 +12,37 @@ function AdminShortlinks() {
     loadShortlinks()
   }, [])
 
-  const loadShortlinks = () => {
+  const loadShortlinks = async () => {
     setLoading(true)
-    const data = getShortlinks()
-    setShortlinks(data || [])
+    setError('')
+    const { data, error: linksError } = await getShortlinks()
+    if (linksError) {
+      setError(linksError.message || 'Failed to load shortlinks')
+    } else {
+      setShortlinks(data || [])
+    }
     setLoading(false)
   }
 
-  const handleToggleActive = (shortlink) => {
-    const data = updateShortlink(shortlink.id, {
-      is_active: !shortlink.is_active,
-    })
+  const handleToggleActive = async (shortlink) => {
+    const { data, error: toggleError } = await toggleShortlink(shortlink.id, !shortlink.is_active)
 
-    if (data) {
+    if (toggleError) {
+      setError(toggleError.message || 'Failed to toggle shortlink')
+    } else if (data) {
       setShortlinks(shortlinks.map(link => (link.id === shortlink.id ? data : link)))
     }
   }
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this shortlink?')) {
       return
     }
 
-    const success = deleteShortlink(id)
-    if (success) {
+    const { error: deleteError } = await deleteShortlink(id)
+    if (deleteError) {
+      setError(deleteError.message || 'Failed to delete shortlink')
+    } else {
       setShortlinks(shortlinks.filter(link => link.id !== id))
     }
   }
@@ -50,9 +57,7 @@ function AdminShortlinks() {
 
   const filteredShortlinks = shortlinks.filter(link =>
     link.short_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    link.original_url.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (link.title && link.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (link.shortlist_name && link.shortlist_name.toLowerCase().includes(searchTerm.toLowerCase()))
+    link.original_url.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   if (loading) {
@@ -91,7 +96,7 @@ function AdminShortlinks() {
         <input
           type="text"
           className="input search-input"
-          placeholder="Search by code, URL, title, or user email..."
+          placeholder="Search by code or URL..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -113,7 +118,6 @@ function AdminShortlinks() {
                     </svg>
                   </div>
                   <div className="link-info">
-                    {link.title && <h3 className="link-title">{link.title}</h3>}
                     <a
                       href={`${shortUrl}/r/${link.short_code}`}
                       target="_blank"
@@ -126,37 +130,15 @@ function AdminShortlinks() {
                     <div className="link-meta">
                       <span className="meta-item">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <circle cx="12" cy="12" r="10" />
-                          <path d="M16 8h-6a2 2 0 100 4h4a2 2 0 110 4H8" />
+                          <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
-                        {link.users?.email || 'Unknown user'}
-                      </span>
-                      <span className="meta-item">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        {link.shortlists?.name || 'Unknown shortlist'}
+                        {link.click_count || 0} clicks
                       </span>
                     </div>
                   </div>
                 </div>
                 <div className="card-right">
-                  <div className="link-stats">
-                    <div className="stat-item">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                      <span>{link.clicks}</span>
-                    </div>
-                    <div className="stat-item">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M12 6v6l4 2" />
-                      </svg>
-                      <span>{formatDate(link.created_at)}</span>
-                    </div>
-                  </div>
                   <div className="link-actions">
                     <button
                       onClick={() => handleToggleActive(link)}

@@ -4,9 +4,10 @@ import ShortlistsManager from '../components/ShortlistsManager'
 import ShortlinksView from '../components/ShortlinksView'
 import './UserDashboard.css'
 
-function UserDashboard({ user }) {
+function UserDashboard({ user, onAuthChange }) {
   const handleSignOut = async () => {
     await signOut()
+    onAuthChange()
   }
 
   return (
@@ -24,10 +25,10 @@ function UserDashboard({ user }) {
         <div className="nav-user">
           <div className="user-info">
             <div className="user-avatar">
-              {user.email.charAt(0).toUpperCase()}
+              {user.username.charAt(0).toUpperCase()}
             </div>
             <div className="user-details">
-              <span className="user-email">{user.email}</span>
+              <span className="user-email">{user.username}</span>
               <span className="user-role badge badge-primary">User</span>
             </div>
           </div>
@@ -42,8 +43,8 @@ function UserDashboard({ user }) {
 
       <div className="dashboard-content">
         <Routes>
-          <Route path="/" element={<ShortlistsManager userId={user.id} />} />
-          <Route path="/shortlist/:shortlistId" element={<ShortlinksView userId={user.id} />} />
+          <Route path="/" element={<ShortlistsManager />} />
+          <Route path="/shortlist/:shortlistId" element={<ShortlinksView />} />
           <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </div>

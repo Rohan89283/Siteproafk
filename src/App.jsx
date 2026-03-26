@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { supabase } from './lib/supabase'
-import { getUserRole } from './lib/auth'
+import { getCurrentUser, initializeAuth } from './lib/auth'
 import Auth from './pages/Auth'
 import UserDashboard from './pages/UserDashboard'
 import AdminDashboard from './pages/AdminDashboard'
@@ -9,39 +8,22 @@ import Redirect from './pages/Redirect'
 
 function App() {
   const [user, setUser] = useState(null)
-  const [userRole, setUserRole] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Initialize auth on app load
+    initializeAuth()
+
     // Check current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        getUserRole(session.user.id).then(role => {
-          setUserRole(role)
-          setLoading(false)
-        })
-      } else {
-        setLoading(false)
-      }
-    })
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        getUserRole(session.user.id).then(role => {
-          setUserRole(role)
-        })
-      } else {
-        setUserRole(null)
-      }
-    })
-
-    return () => subscription.unsubscribe()
+    const currentUser = getCurrentUser()
+    setUser(currentUser)
+    setLoading(false)
   }, [])
+
+  const handleAuthChange = () => {
+    const currentUser = getCurrentUser()
+    setUser(currentUser)
+  }
 
   if (loading) {
     return (
@@ -61,7 +43,7 @@ function App() {
         {/* Auth route */}
         <Route
           path="/auth"
-          element={user ? <Navigate to="/dashboard" /> : <Auth />}
+          element={user ? <Navigate to="/dashboard" /> : <Auth onAuthChange={handleAuthChange} />}
         />
 
         {/* Dashboard routes */}
@@ -69,10 +51,10 @@ function App() {
           path="/dashboard/*"
           element={
             user ? (
-              userRole === 'admin' ? (
-                <AdminDashboard user={user} />
+              user.role === 'admin' ? (
+                <AdminDashboard user={user} onAuthChange={handleAuthChange} />
               ) : (
-                <UserDashboard user={user} />
+                <UserDashboard user={user} onAuthChange={handleAuthChange} />
               )
             ) : (
               <Navigate to="/auth" />

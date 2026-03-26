@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getShortlinks, addShortlink, getShortlists, getShortlinkByCode } from '../lib/localStorage'
+import { getShortlinks, createShortlink, getShortlists } from '../lib/shortlinks'
 import ShortlinkItem from './ShortlinkItem'
 import './ShortlinksView.css'
 
@@ -12,7 +12,6 @@ function ShortlinksView() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [formData, setFormData] = useState({
-    title: '',
     originalUrl: '',
     shortCode: '',
   })
@@ -22,12 +21,19 @@ function ShortlinksView() {
     loadData()
   }, [shortlistId])
 
-  const loadData = () => {
+  const loadData = async () => {
     setLoading(true)
     setError('')
 
-    const shortlistsData = getShortlists()
-    const currentShortlist = shortlistsData.find(s => s.id === shortlistId)
+    const { data: shortlistsData, error: listsError } = await getShortlists()
+
+    if (listsError) {
+      setError(listsError.message || 'Failed to load shortlists')
+      setLoading(false)
+      return
+    }
+
+    const currentShortlist = shortlistsData?.find(s => s.id === shortlistId)
 
     if (!currentShortlist) {
       navigate('/dashboard')
@@ -36,13 +42,22 @@ function ShortlinksView() {
 
     setShortlist(currentShortlist)
 
-    const data = getShortlinks(shortlistId)
-    setShortlinks(data || [])
+    const { data, error: linksError } = await getShortlinks(shortlistId)
+    if (linksError) {
+      setError(linksError.message || 'Failed to load shortlinks')
+    } else {
+      setShortlinks(data || [])
+    }
     setLoading(false)
   }
 
   const generateShortCode = () => {
-    return Math.random().toString(36).substring(2, 8).toLowerCase()
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+    let code = ''
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    return code
   }
 
   const handleCreate = async (e) => {
@@ -68,20 +83,18 @@ function ShortlinksView() {
       return
     }
 
-    const { data, error } = await createShortlink(
+    const { data, error: createError } = await createShortlink(
       shortlistId,
-      userId,
       formData.originalUrl,
-      formData.shortCode,
-      formData.title
+      formData.shortCode
     )
 
-    if (error) {
-      setError(error.message)
+    if (createError) {
+      setError(createError.message || 'Failed to create shortlink')
     } else {
       setShortlinks([data, ...shortlinks])
       setShowModal(false)
-      setFormData({ title: '', originalUrl: '', shortCode: '' })
+      setFormData({ originalUrl: '', shortCode: '' })
     }
   }
 
@@ -123,7 +136,6 @@ function ShortlinksView() {
       <div className="shortlist-header">
         <div>
           <h1>{shortlist?.name}</h1>
-          {shortlist?.description && <p>{shortlist.description}</p>}
         </div>
         <button
           onClick={() => {
@@ -182,17 +194,6 @@ function ShortlinksView() {
               <h2>Add New Link</h2>
             </div>
             <form onSubmit={handleCreate}>
-              <div className="form-group">
-                <label htmlFor="title">Title (optional)</label>
-                <input
-                  id="title"
-                  type="text"
-                  className="input"
-                  placeholder="My Awesome Link"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                />
-              </div>
               <div className="form-group">
                 <label htmlFor="originalUrl">Original URL</label>
                 <input

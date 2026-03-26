@@ -1,28 +1,26 @@
 import { useState } from 'react'
-import { login } from '../lib/localStorage'
+import { signIn } from '../lib/auth'
 import './Auth.css'
 
-function Auth({ onLogin }) {
-  const [isLogin, setIsLogin] = useState(true)
+function Auth({ onAuthChange }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setLoading(true)
 
-    const result = login(username, password)
+    const { user, error: signInError } = await signIn(username, password)
 
-    if (result.success) {
-      onLogin(result.user)
+    if (signInError) {
+      setError(signInError.message || 'Failed to sign in')
+      setLoading(false)
     } else {
-      setError(result.error)
+      onAuthChange()
     }
-
-    setLoading(false)
   }
 
   return (
@@ -42,45 +40,28 @@ function Auth({ onLogin }) {
           </div>
           <h1>ShortLink Manager</h1>
           <p>Manage your links with ease</p>
-          {isLogin && (
-            <div className="admin-hint">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>Admins login with their admin credentials here</span>
-            </div>
-          )}
-        </div>
-
-        <div className="auth-tabs">
-          <button
-            className={`tab ${isLogin ? 'active' : ''}`}
-            onClick={() => setIsLogin(true)}
-          >
-            Login
-          </button>
-          <button
-            className={`tab ${!isLogin ? 'active' : ''}`}
-            onClick={() => setIsLogin(false)}
-          >
-            Sign Up
-          </button>
+          <div className="admin-hint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+              <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Both admins and users login here</span>
+          </div>
         </div>
 
         {error && <div className="alert alert-error">{error}</div>}
-        {message && <div className="alert alert-success">{message}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="username">Username</label>
             <input
-              id="email"
-              type="email"
+              id="username"
+              type="text"
               className="input"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
+              autoComplete="username"
             />
           </div>
 
@@ -90,11 +71,12 @@ function Auth({ onLogin }) {
               id="password"
               type="password"
               className="input"
-              placeholder="••••••••"
+              placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
+              autoComplete="current-password"
             />
           </div>
 
@@ -103,21 +85,16 @@ function Auth({ onLogin }) {
             className="btn btn-primary btn-block"
             disabled={loading}
           >
-            {loading ? 'Processing...' : isLogin ? 'Login' : 'Sign Up'}
+            {loading ? (
+              <>
+                <div className="btn-spinner"></div>
+                Signing in...
+              </>
+            ) : (
+              'Sign In'
+            )}
           </button>
         </form>
-
-        <div className="auth-footer">
-          <p>
-            {isLogin ? "Don't have an account?" : 'Already have an account?'}
-            <button
-              className="link-button"
-              onClick={() => setIsLogin(!isLogin)}
-            >
-              {isLogin ? 'Sign Up' : 'Login'}
-            </button>
-          </p>
-        </div>
       </div>
     </div>
   )

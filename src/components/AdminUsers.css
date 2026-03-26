@@ -10,6 +10,16 @@
   gap: 2rem;
 }
 
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
 .users-header h2 {
   font-size: 1.75rem;
   color: var(--text-primary);

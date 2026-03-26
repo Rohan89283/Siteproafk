@@ -1,19 +1,25 @@
 import { useState, useEffect } from 'react'
-import { getStats } from '../lib/localStorage'
+import { getStats } from '../lib/shortlinks'
 import './AdminStats.css'
 
 function AdminStats() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     loadStats()
   }, [])
 
-  const loadStats = () => {
+  const loadStats = async () => {
     setLoading(true)
-    const data = getStats()
-    setStats(data)
+    setError('')
+    const { data, error: statsError } = await getStats()
+    if (statsError) {
+      setError(statsError.message || 'Failed to load statistics')
+    } else {
+      setStats(data)
+    }
     setLoading(false)
   }
 
@@ -40,18 +46,7 @@ function AdminStats() {
         </svg>
       ),
       gradient: 'var(--gradient-primary)',
-      color: '#6366f1',
-    },
-    {
-      title: 'Total Shortlists',
-      value: stats.totalShortlists,
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      ),
-      gradient: 'var(--gradient-secondary)',
-      color: '#8b5cf6',
+      color: 'var(--primary)',
     },
     {
       title: 'Total Shortlinks',
@@ -61,8 +56,8 @@ function AdminStats() {
           <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
         </svg>
       ),
-      gradient: 'var(--gradient-accent)',
-      color: '#4facfe',
+      gradient: 'var(--gradient-secondary)',
+      color: 'var(--secondary)',
     },
     {
       title: 'Total Clicks',
@@ -73,8 +68,8 @@ function AdminStats() {
           <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
         </svg>
       ),
-      gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-      color: '#f093fb',
+      gradient: 'var(--gradient-accent)',
+      color: 'var(--accent)',
     },
   ]
 
@@ -114,26 +109,10 @@ function AdminStats() {
           <h3>Quick Insights</h3>
           <div className="insights-list">
             <div className="insight-item">
-              <span className="insight-label">Average links per shortlist:</span>
-              <span className="insight-value">
-                {stats.totalShortlists > 0
-                  ? (stats.totalShortlinks / stats.totalShortlists).toFixed(2)
-                  : 0}
-              </span>
-            </div>
-            <div className="insight-item">
               <span className="insight-label">Average clicks per link:</span>
               <span className="insight-value">
                 {stats.totalShortlinks > 0
                   ? (stats.totalClicks / stats.totalShortlinks).toFixed(2)
-                  : 0}
-              </span>
-            </div>
-            <div className="insight-item">
-              <span className="insight-label">Average shortlists per user:</span>
-              <span className="insight-value">
-                {stats.totalUsers > 0
-                  ? (stats.totalShortlists / stats.totalUsers).toFixed(2)
                   : 0}
               </span>
             </div>

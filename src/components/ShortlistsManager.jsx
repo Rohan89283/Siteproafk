@@ -4,23 +4,24 @@ import { getShortlists, createShortlist, deleteShortlist } from '../lib/shortlin
 import ShortlistCard from './ShortlistCard'
 import './ShortlistsManager.css'
 
-function ShortlistsManager({ userId }) {
+function ShortlistsManager() {
   const [shortlists, setShortlists] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
-  const [formData, setFormData] = useState({ name: '', description: '' })
+  const [formData, setFormData] = useState({ name: '' })
   const [error, setError] = useState('')
   const navigate = useNavigate()
 
   useEffect(() => {
     loadShortlists()
-  }, [userId])
+  }, [])
 
   const loadShortlists = async () => {
     setLoading(true)
-    const { data, error } = await getShortlists(userId)
-    if (error) {
-      setError(error.message)
+    setError('')
+    const { data, error: listsError } = await getShortlists()
+    if (listsError) {
+      setError(listsError.message || 'Failed to load shortlists')
     } else {
       setShortlists(data || [])
     }
@@ -36,13 +37,13 @@ function ShortlistsManager({ userId }) {
       return
     }
 
-    const { data, error } = await createShortlist(userId, formData.name, formData.description)
-    if (error) {
-      setError(error.message)
+    const { data, error: createError } = await createShortlist(formData.name)
+    if (createError) {
+      setError(createError.message || 'Failed to create shortlist')
     } else {
       setShortlists([data, ...shortlists])
       setShowModal(false)
-      setFormData({ name: '', description: '' })
+      setFormData({ name: '' })
     }
   }
 
@@ -51,9 +52,9 @@ function ShortlistsManager({ userId }) {
       return
     }
 
-    const { error } = await deleteShortlist(id)
-    if (error) {
-      setError(error.message)
+    const { error: deleteError } = await deleteShortlist(id)
+    if (deleteError) {
+      setError(deleteError.message || 'Failed to delete shortlist')
     } else {
       setShortlists(shortlists.filter(list => list.id !== id))
     }
@@ -133,17 +134,6 @@ function ShortlistsManager({ userId }) {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="description">Description (optional)</label>
-                <textarea
-                  id="description"
-                  className="input"
-                  placeholder="A collection of useful links"
-                  rows="3"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
               </div>
               <div className="modal-footer">

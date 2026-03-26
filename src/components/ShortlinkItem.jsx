@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import { updateShortlink, deleteShortlink } from '../lib/shortlinks'
+import { updateShortlink, deleteShortlink, toggleShortlink } from '../lib/shortlinks'
 import './ShortlinkItem.css'
 
 function ShortlinkItem({ shortlink, shortUrl, onDelete, onUpdate }) {
   const [showEdit, setShowEdit] = useState(false)
   const [editData, setEditData] = useState({
-    title: shortlink.title || '',
     originalUrl: shortlink.original_url,
   })
   const [error, setError] = useState('')
@@ -34,13 +33,12 @@ function ShortlinkItem({ shortlink, shortUrl, onDelete, onUpdate }) {
       return
     }
 
-    const { data, error } = await updateShortlink(shortlink.id, {
-      title: editData.title,
+    const { data, error: updateError } = await updateShortlink(shortlink.id, {
       original_url: editData.originalUrl,
     })
 
-    if (error) {
-      setError(error.message)
+    if (updateError) {
+      setError(updateError.message || 'Failed to update shortlink')
     } else {
       onUpdate(data)
       setShowEdit(false)
@@ -48,11 +46,9 @@ function ShortlinkItem({ shortlink, shortUrl, onDelete, onUpdate }) {
   }
 
   const handleToggleActive = async () => {
-    const { data, error } = await updateShortlink(shortlink.id, {
-      is_active: !shortlink.is_active,
-    })
+    const { data, error: toggleError } = await toggleShortlink(shortlink.id, !shortlink.is_active)
 
-    if (!error && data) {
+    if (!toggleError && data) {
       onUpdate(data)
     }
   }
@@ -62,8 +58,8 @@ function ShortlinkItem({ shortlink, shortUrl, onDelete, onUpdate }) {
       return
     }
 
-    const { error } = await deleteShortlink(shortlink.id)
-    if (!error) {
+    const { error: deleteError } = await deleteShortlink(shortlink.id)
+    if (!deleteError) {
       onDelete(shortlink.id)
     }
   }
@@ -88,7 +84,6 @@ function ShortlinkItem({ shortlink, shortUrl, onDelete, onUpdate }) {
         <div className="item-content">
           <div className="item-header">
             <div>
-              {shortlink.title && <h3 className="item-title">{shortlink.title}</h3>}
               <a
                 href={fullShortUrl}
                 target="_blank"
@@ -171,7 +166,7 @@ function ShortlinkItem({ shortlink, shortUrl, onDelete, onUpdate }) {
                   <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
-                {shortlink.clicks} clicks
+                {shortlink.click_count || 0} clicks
               </span>
               <span className="stat">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -192,15 +187,6 @@ function ShortlinkItem({ shortlink, shortUrl, onDelete, onUpdate }) {
         <div className="item-edit">
           {error && <div className="alert alert-error">{error}</div>}
           <form onSubmit={handleUpdate}>
-            <div className="form-group">
-              <label>Title</label>
-              <input
-                type="text"
-                className="input"
-                value={editData.title}
-                onChange={(e) => setEditData({ ...editData, title: e.target.value })}
-              />
-            </div>
             <div className="form-group">
               <label>Original URL</label>
               <input

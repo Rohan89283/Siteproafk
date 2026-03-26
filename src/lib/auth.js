@@ -1,84 +1,145 @@
-import { supabase } from './supabase'
+import { supabase, setUserContext } from './supabase';
+import bcrypt from 'bcryptjs';
 
-export const signUp = async (email, password) => {
+// Session storage
+const SESSION_KEY = 'shortlink_session';
+
+export const getSession = () => {
+  const session = localStorage.getItem(SESSION_KEY);
+  return session ? JSON.parse(session) : null;
+};
+
+const setSession = (user) => {
+  localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+  setUserContext(user.id);
+};
+
+const clearSession = () => {
+  localStorage.removeItem(SESSION_KEY);
+  setUserContext(null);
+};
+
+// Sign in with username and password
+export const signIn = async (username, password) => {
   try {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    })
+    // Fetch user by username
+    const { data: user, error } = await supabase
+      .from('app_users')
+      .select('*')
+      .eq('username', username)
+      .maybeSingle();
 
-    if (error) throw error
+    if (error) throw error;
+    if (!user) throw new Error('Invalid username or password');
 
-    if (data.user) {
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert([
-          {
-            user_id: data.user.id,
-            role: 'user',
-          },
-        ])
+    // Compare password with hash
+    const isValid = await bcrypt.compare(password, user.password_hash);
+    if (!isValid) throw new Error('Invalid username or password');
 
-      if (roleError) {
-        console.error('Error creating user role:', roleError)
-      }
+    // Set session
+    setSession(user);
+
+    return { user, error: null };
+  } catch (error) {
+    return { user: null, error };
+  }
+};
+
+// Sign out
+export const signOut = async () => {
+  clearSession();
+  return { error: null };
+};
+
+// Get current user from session
+export const getCurrentUser = () => {
+  const session = getSession();
+  if (session) {
+    setUserContext(session.id);
+  }
+  return session;
+};
+
+// Check if user is admin
+export const isAdmin = () => {
+  const user = getCurrentUser();
+  return user?.role === 'admin';
+};
+
+// Admin: Create new user
+export const createUser = async (username, password, role = 'user') => {
+  try {
+    const currentUser = getCurrentUser();
+    if (!currentUser || currentUser.role !== 'admin') {
+      throw new Error('Only admins can create users');
     }
 
-    return { data, error: null }
-  } catch (error) {
-    return { data: null, error }
-  }
-}
+    // Hash password
+    const password_hash = await bcrypt.hash(password, 10);
 
-export const signIn = async (email, password) => {
-  try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (error) throw error
-
-    return { data, error: null }
-  } catch (error) {
-    return { data: null, error }
-  }
-}
-
-export const signOut = async () => {
-  try {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
-    return { error: null }
-  } catch (error) {
-    return { error }
-  }
-}
-
-export const getUserRole = async (userId) => {
-  try {
+    // Insert user
     const { data, error } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .maybeSingle()
+      .from('app_users')
+      .insert([{
+        username,
+        password_hash,
+        role,
+        created_by: currentUser.id
+      }])
+      .select()
+      .single();
 
-    if (error) throw error
+    if (error) throw error;
 
-    return data?.role || 'user'
+    return { data, error: null };
   } catch (error) {
-    console.error('Error fetching user role:', error)
-    return 'user'
+    return { data: null, error };
   }
-}
+};
 
-export const getCurrentUser = async () => {
+// Admin: Delete user
+export const deleteUser = async (userId) => {
   try {
-    const { data: { user }, error } = await supabase.auth.getUser()
-    if (error) throw error
-    return user
+    const currentUser = getCurrentUser();
+    if (!currentUser || currentUser.role !== 'admin') {
+      throw new Error('Only admins can delete users');
+    }
+
+    const { error } = await supabase
+      .from('app_users')
+      .delete()
+      .eq('id', userId);
+
+    if (error) throw error;
+
+    return { error: null };
   } catch (error) {
-    console.error('Error fetching current user:', error)
-    return null
+    return { error };
   }
-}
+};
+
+// Update password
+export const updatePassword = async (userId, newPassword) => {
+  try {
+    const password_hash = await bcrypt.hash(newPassword, 10);
+
+    const { error } = await supabase
+      .from('app_users')
+      .update({ password_hash })
+      .eq('id', userId);
+
+    if (error) throw error;
+
+    return { error: null };
+  } catch (error) {
+    return { error };
+  }
+};
+
+// Initialize session on app load
+export const initializeAuth = () => {
+  const user = getCurrentUser();
+  if (user) {
+    setUserContext(user.id);
+  }
+};
