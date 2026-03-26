@@ -25,15 +25,20 @@ function Redirect() {
           return
         }
 
-        // Increment click count
-        await incrementClicks(data.id)
+        const redirectType = data.redirect_type || 'redirect'
 
-        // Check redirect type
-        if (data.redirect_type === 'direct') {
-          // Direct redirect - instant, no loading screen
+        if (redirectType === 'instant') {
+          // Instant redirect - fastest, redirect before even tracking
+          window.location.replace(data.original_url)
+          // Track in background (will execute if redirect takes time)
+          incrementClicks(data.id).catch(() => {})
+        } else if (redirectType === 'direct') {
+          // Direct redirect - track then redirect immediately
+          await incrementClicks(data.id)
           window.location.replace(data.original_url)
         } else {
           // Redirect with loading page
+          incrementClicks(data.id).catch(() => {})
           setStatus('redirecting')
           setTimeout(() => {
             window.location.replace(data.original_url)

@@ -207,12 +207,12 @@ function ShortlinkItem({ shortlink, shortUrl, onDelete, onUpdate }) {
                   <input
                     type="radio"
                     name="redirectType"
-                    value="redirect"
-                    checked={editData.redirectType === 'redirect'}
+                    value="instant"
+                    checked={editData.redirectType === 'instant'}
                     onChange={(e) => setEditData({ ...editData, redirectType: e.target.value })}
                   />
-                  <span>Redirect with Loading Page</span>
-                  <small>Shows a loading page before redirecting</small>
+                  <span>Instant Redirect</span>
+                  <small>Fastest redirect, no tracking delay</small>
                 </label>
                 <label className="radio-label">
                   <input
@@ -223,7 +223,18 @@ function ShortlinkItem({ shortlink, shortUrl, onDelete, onUpdate }) {
                     onChange={(e) => setEditData({ ...editData, redirectType: e.target.value })}
                   />
                   <span>Direct Redirect</span>
-                  <small>Instantly redirects to destination</small>
+                  <small>Quick redirect after tracking</small>
+                </label>
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="redirectType"
+                    value="redirect"
+                    checked={editData.redirectType === 'redirect'}
+                    onChange={(e) => setEditData({ ...editData, redirectType: e.target.value })}
+                  />
+                  <span>Redirect with Loading Page</span>
+                  <small>Shows loading animation</small>
                 </label>
               </div>
             </div>

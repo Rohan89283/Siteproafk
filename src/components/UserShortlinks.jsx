@@ -231,13 +231,13 @@ function UserShortlinks() {
                     <input
                       type="radio"
                       name="redirectType"
-                      value="redirect"
-                      checked={formData.redirectType === 'redirect'}
+                      value="instant"
+                      checked={formData.redirectType === 'instant'}
                       onChange={(e) => setFormData({ ...formData, redirectType: e.target.value })}
                     />
                     <span>
-                      Redirect with Loading Page
-                      <small>Shows a loading page before redirecting</small>
+                      Instant Redirect
+                      <small>Fastest redirect, no tracking delay</small>
                     </span>
                   </label>
                   <label className="radio-label">
@@ -250,7 +250,20 @@ function UserShortlinks() {
                     />
                     <span>
                       Direct Redirect
-                      <small>Instantly redirects to destination</small>
+                      <small>Quick redirect after tracking</small>
+                    </span>
+                  </label>
+                  <label className="radio-label">
+                    <input
+                      type="radio"
+                      name="redirectType"
+                      value="redirect"
+                      checked={formData.redirectType === 'redirect'}
+                      onChange={(e) => setFormData({ ...formData, redirectType: e.target.value })}
+                    />
+                    <span>
+                      Redirect with Loading Page
+                      <small>Shows loading animation</small>
                     </span>
                   </label>
                 </div>

@@ -311,13 +311,13 @@ function AdminShortlinks() {
                     <input
                       type="radio"
                       name="redirectType"
-                      value="redirect"
-                      checked={newLink.redirectType === 'redirect'}
+                      value="instant"
+                      checked={newLink.redirectType === 'instant'}
                       onChange={(e) => setNewLink({ ...newLink, redirectType: e.target.value })}
                     />
                     <span>
-                      Redirect with Loading Page
-                      <small>Shows a loading page before redirecting</small>
+                      Instant Redirect
+                      <small>Fastest redirect, no tracking delay</small>
                     </span>
                   </label>
                   <label className="radio-label">
@@ -330,7 +330,20 @@ function AdminShortlinks() {
                     />
                     <span>
                       Direct Redirect
-                      <small>Instantly redirects to destination</small>
+                      <small>Quick redirect after tracking</small>
+                    </span>
+                  </label>
+                  <label className="radio-label">
+                    <input
+                      type="radio"
+                      name="redirectType"
+                      value="redirect"
+                      checked={newLink.redirectType === 'redirect'}
+                      onChange={(e) => setNewLink({ ...newLink, redirectType: e.target.value })}
+                    />
+                    <span>
+                      Redirect with Loading Page
+                      <small>Shows loading animation</small>
                     </span>
                   </label>
                 </div>
@@ -380,13 +393,13 @@ function AdminShortlinks() {
                     <input
                       type="radio"
                       name="editRedirectType"
-                      value="redirect"
-                      checked={editData.redirectType === 'redirect'}
+                      value="instant"
+                      checked={editData.redirectType === 'instant'}
                       onChange={(e) => setEditData({ ...editData, redirectType: e.target.value })}
                     />
                     <span>
-                      Redirect with Loading Page
-                      <small>Shows a loading page before redirecting</small>
+                      Instant Redirect
+                      <small>Fastest redirect, no tracking delay</small>
                     </span>
                   </label>
                   <label className="radio-label">
@@ -399,7 +412,20 @@ function AdminShortlinks() {
                     />
                     <span>
                       Direct Redirect
-                      <small>Instantly redirects to destination</small>
+                      <small>Quick redirect after tracking</small>
+                    </span>
+                  </label>
+                  <label className="radio-label">
+                    <input
+                      type="radio"
+                      name="editRedirectType"
+                      value="redirect"
+                      checked={editData.redirectType === 'redirect'}
+                      onChange={(e) => setEditData({ ...editData, redirectType: e.target.value })}
+                    />
+                    <span>
+                      Redirect with Loading Page
+                      <small>Shows loading animation</small>
                     </span>
                   </label>
                 </div>
