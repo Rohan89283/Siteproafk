@@ -1,35 +1,28 @@
 import { useState } from 'react'
-import { signIn, signUp } from '../lib/auth'
+import { login } from '../lib/localStorage'
 import './Auth.css'
 
-function Auth() {
+function Auth({ onLogin }) {
   const [isLogin, setIsLogin] = useState(true)
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [message, setMessage] = useState('')
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault()
     setError('')
-    setMessage('')
     setLoading(true)
 
-    try {
-      if (isLogin) {
-        const { error } = await signIn(email, password)
-        if (error) throw error
-      } else {
-        const { error } = await signUp(email, password)
-        if (error) throw error
-        setMessage('Account created successfully! Please check your email for verification.')
-      }
-    } catch (err) {
-      setError(err.message || 'An error occurred')
-    } finally {
-      setLoading(false)
+    const result = login(username, password)
+
+    if (result.success) {
+      onLogin(result.user)
+    } else {
+      setError(result.error)
     }
+
+    setLoading(false)
   }
 
   return (

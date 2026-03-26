@@ -1,15 +1,52 @@
 import { useState } from 'react'
-import { signOut } from '../lib/auth'
+import { logout } from '../lib/localStorage'
+import { configureTelegram, sendBackupToTelegram, getTelegramConfig } from '../lib/telegram'
 import AdminStats from '../components/AdminStats'
 import AdminUsers from '../components/AdminUsers'
 import AdminShortlinks from '../components/AdminShortlinks'
 import './AdminDashboard.css'
 
-function AdminDashboard({ user }) {
+function AdminDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('stats')
+  const [showTelegramSetup, setShowTelegramSetup] = useState(false)
+  const [botToken, setBotToken] = useState('')
+  const [chatId, setChatId] = useState('')
+  const [backupMessage, setBackupMessage] = useState('')
 
-  const handleSignOut = async () => {
-    await signOut()
+  const handleSignOut = () => {
+    logout()
+    onLogout()
+  }
+
+  const handleTelegramClick = () => {
+    const config = getTelegramConfig()
+    if (config) {
+      setBotToken(config.botToken)
+      setChatId(config.chatId)
+    }
+    setShowTelegramSetup(true)
+  }
+
+  const saveTelegramConfig = () => {
+    if (!botToken || !chatId) {
+      setBackupMessage('Error: Please fill in both fields')
+      setTimeout(() => setBackupMessage(''), 3000)
+      return
+    }
+    configureTelegram(botToken, chatId)
+    setShowTelegramSetup(false)
+    setBackupMessage('Telegram configured successfully!')
+    setTimeout(() => setBackupMessage(''), 3000)
+  }
+
+  const handleBackup = async () => {
+    try {
+      await sendBackupToTelegram()
+      setBackupMessage('Backup sent to Telegram successfully!')
+    } catch (error) {
+      setBackupMessage(`Error: ${error.message}`)
+    }
+    setTimeout(() => setBackupMessage(''), 5000)
   }
 
   return (
@@ -28,12 +65,22 @@ function AdminDashboard({ user }) {
         </div>
 
         <div className="nav-user">
+          <button onClick={handleTelegramClick} className="btn btn-secondary" title="Configure Telegram">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+            </svg>
+          </button>
+          <button onClick={handleBackup} className="btn btn-secondary" title="Backup to Telegram">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+          </button>
           <div className="user-info">
             <div className="user-avatar admin">
-              {user.email.charAt(0).toUpperCase()}
+              {user.username.charAt(0).toUpperCase()}
             </div>
             <div className="user-details">
-              <span className="user-email">{user.email}</span>
+              <span className="user-email">{user.username}</span>
               <span className="user-role badge badge-warning">Admin</span>
             </div>
           </div>

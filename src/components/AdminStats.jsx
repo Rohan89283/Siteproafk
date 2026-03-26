@@ -1,24 +1,19 @@
 import { useState, useEffect } from 'react'
-import { getStats } from '../lib/shortlinks'
+import { getStats } from '../lib/localStorage'
 import './AdminStats.css'
 
 function AdminStats() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
 
   useEffect(() => {
     loadStats()
   }, [])
 
-  const loadStats = async () => {
+  const loadStats = () => {
     setLoading(true)
-    const { data, error } = await getStats()
-    if (error) {
-      setError(error.message)
-    } else {
-      setStats(data)
-    }
+    const data = getStats()
+    setStats(data)
     setLoading(false)
   }
 

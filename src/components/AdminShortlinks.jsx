@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getAllShortlinks, updateShortlink, deleteShortlink } from '../lib/shortlinks'
+import { getShortlinks, updateShortlink, deleteShortlink } from '../lib/localStorage'
 import './AdminShortlinks.css'
 
 function AdminShortlinks() {
@@ -12,38 +12,30 @@ function AdminShortlinks() {
     loadShortlinks()
   }, [])
 
-  const loadShortlinks = async () => {
+  const loadShortlinks = () => {
     setLoading(true)
-    const { data, error } = await getAllShortlinks()
-    if (error) {
-      setError(error.message)
-    } else {
-      setShortlinks(data || [])
-    }
+    const data = getShortlinks()
+    setShortlinks(data || [])
     setLoading(false)
   }
 
-  const handleToggleActive = async (shortlink) => {
-    const { data, error } = await updateShortlink(shortlink.id, {
+  const handleToggleActive = (shortlink) => {
+    const data = updateShortlink(shortlink.id, {
       is_active: !shortlink.is_active,
     })
 
-    if (error) {
-      setError(error.message)
-    } else {
+    if (data) {
       setShortlinks(shortlinks.map(link => (link.id === shortlink.id ? data : link)))
     }
   }
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     if (!confirm('Are you sure you want to delete this shortlink?')) {
       return
     }
 
-    const { error } = await deleteShortlink(id)
-    if (error) {
-      setError(error.message)
-    } else {
+    const success = deleteShortlink(id)
+    if (success) {
       setShortlinks(shortlinks.filter(link => link.id !== id))
     }
   }
@@ -60,7 +52,7 @@ function AdminShortlinks() {
     link.short_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
     link.original_url.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (link.title && link.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (link.users?.email && link.users.email.toLowerCase().includes(searchTerm.toLowerCase()))
+    (link.shortlist_name && link.shortlist_name.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
   if (loading) {

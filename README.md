@@ -1,44 +1,76 @@
 # ShortLink Manager
 
-A complete shortlink management platform with user dashboards, admin control panel, and click analytics. Built with React, Supabase, and Vite.
+A secure, admin-only URL shortener with Telegram backup integration. All data stored in browser localStorage - no database required!
 
 ## Features
 
-### User Panel
-- Sign up and login with email/password
-- Create multiple shortlists to organize links
-- Create, edit, and delete shortlinks
-- View click analytics and history per link
-- Copy short URLs with one click
-- View all personal shortlinks and statistics
+- **Admin-only access** with hardcoded credentials
+- **Organize links** into collections (shortlists)
+- **Click tracking** and statistics
+- **Toggle links** active/inactive
+- **Browser localStorage** for data (zero database setup)
+- **Telegram bot integration** for backups
+- **Login required** for all pages (including redirects)
 
-### Admin Panel
-- System statistics dashboard (users, shortlists, shortlinks, total clicks)
-- User management with role control (promote/demote admin)
-- View all shortlinks globally
-- Delete shortlinks from admin interface
-- Access control based on user roles
+## Quick Start
 
-### Core Features
-- Fast shortlink redirects (format: `/r/{shortCode}`)
-- Automatic click tracking and analytics
-- Row Level Security (RLS) for data protection
-- Responsive design for mobile and desktop
-- Clean, modern UI with smooth animations
+**Login Credentials:**
+- Username: `RohanAFK`
+- Password: `Rohan456`
+
+## Deploy to Railway
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete step-by-step instructions.
+
+**Quick Deploy:**
+1. Sign in to [Railway](https://railway.app) with GitHub
+2. Deploy this repo
+3. Railway auto-detects build settings
+4. **No environment variables needed!**
+5. Done!
+
+## Telegram Backups
+
+Since data is stored in browser localStorage, backing up to Telegram is recommended:
+
+1. Create a bot via @BotFather on Telegram
+2. Get chat ID from @userinfobot
+3. Login to admin panel
+4. Click Telegram icon (paper plane) in header
+5. Enter Bot Token and Chat ID, save
+6. Click backup icon anytime to send full backup
+
+Backups include all shortlinks, shortlists, and statistics in JSON format.
 
 ## Tech Stack
 
-- **Frontend**: React 18 + React Router
-- **Build Tool**: Vite
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth (Email/Password)
-- **Styling**: CSS3 with responsive design
+- React 18 + Vite
+- React Router
+- Browser localStorage (zero database!)
+- Telegram Bot API
+- Pure CSS with responsive design
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Run dev server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
 
 ## Project Structure
 
 ```
 src/
-├── components/          # Reusable components
+├── components/          # React components
 │   ├── AdminShortlinks.jsx
 │   ├── AdminStats.jsx
 │   ├── AdminUsers.jsx
@@ -46,10 +78,9 @@ src/
 │   ├── ShortlinksView.jsx
 │   ├── ShortlistCard.jsx
 │   └── ShortlistsManager.jsx
-├── lib/                 # Utility functions
-│   ├── auth.js
-│   ├── shortlinks.js
-│   └── supabase.js
+├── lib/                 # Utilities
+│   ├── localStorage.js  # Data storage & auth
+│   └── telegram.js      # Telegram integration
 ├── pages/              # Page components
 │   ├── AdminDashboard.jsx
 │   ├── Auth.jsx
@@ -59,172 +90,63 @@ src/
 └── main.jsx
 ```
 
-## Setup Instructions
+## Security
 
-### 1. Prerequisites
-- Node.js 16+
-- Supabase account (https://supabase.com)
+- Only admin (RohanAFK) can access
+- No user registration
+- Login required for ALL routes (including /r/shortcode)
+- Data stored in browser localStorage
+- Hardcoded credentials for maximum simplicity
 
-### 2. Clone & Install
-```bash
-git clone <your-repo-url>
-cd shortlink-manager
-npm install
-```
+## Data Storage
 
-### 3. Configure Environment
-The `.env` file is already configured with:
-```
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_SUPABASE_ANON_KEY=your_anon_key
-```
+All data in browser localStorage:
+- Authentication state
+- Shortlinks
+- Shortlists
+- Click counts
+- Telegram configuration
 
-These values are automatically set from your Supabase project.
-
-### 4. Database Setup
-The database schema is automatically created. Tables include:
-- `user_roles` - User role management (user/admin)
-- `shortlists` - Link collections
-- `shortlinks` - Individual short links
-- `shortlink_clicks` - Click tracking
-
-All tables have Row Level Security enabled for data protection.
-
-### 5. Local Development
-```bash
-npm run dev
-```
-Opens http://localhost:3000
-
-### 6. Production Build
-```bash
-npm run build
-```
-Creates optimized build in `dist/` folder
-
-## Deployment to Railway
-
-### Step 1: Push to GitHub
-```bash
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com/yourusername/shortlink-manager.git
-git push -u origin main
-```
-
-### Step 2: Connect to Railway
-1. Go to https://railway.app
-2. Create new project
-3. Select "Deploy from GitHub"
-4. Connect your GitHub account and select this repository
-5. Configure environment variables:
-   - `VITE_SUPABASE_URL` - Your Supabase URL
-   - `VITE_SUPABASE_SUPABASE_ANON_KEY` - Your Supabase anon key
-
-### Step 3: Configure Build & Start
-- Build Command: `npm run build`
-- Start Command: `npm run preview`
-- Or configure as static site serving `dist/` folder
-
-### Step 4: Connect Domain
-1. In Railway project settings, go to "Domains"
-2. Add your domain `gojosatoruafk.com`
-3. Update DNS records as instructed by Railway
+**Important:** Clearing browser data deletes everything. Regular Telegram backups recommended!
 
 ## Usage
 
-### For Regular Users
-1. Sign up with email and password
-2. Create a shortlist (e.g., "Social Media", "Marketing")
-3. Add shortlinks to your lists
-4. Share the short URL (e.g., gojosatoruafk.com/r/ABC123)
-5. Track clicks and analytics in real-time
+### Creating Short Links
+1. Login with admin credentials
+2. Create a shortlist (e.g., "Social Media")
+3. Add links to your shortlist
+4. Share short URL: `yourdomain.com/r/ABC123`
+5. Track clicks in real-time
 
-### For Admins
-1. Access admin panel at `/admin`
-2. View global statistics
-3. Manage users (promote to admin)
-4. View and delete any shortlink
-5. Monitor system usage
+### Telegram Backups
+1. Configure Telegram (one-time setup)
+2. Click backup icon anytime
+3. Receive JSON file with all data
+4. Restore by importing data (feature coming soon)
 
-## Authentication
+## Why localStorage?
 
-- Email/password authentication via Supabase
-- JWT-based sessions
-- Automatic role assignment on signup (user by default)
-- Admin roles managed by other admins
+- **Zero setup**: No database configuration
+- **Free hosting**: No database costs
+- **Fast**: All data in browser
+- **Simple**: No complex backend
+- **Portable**: Works anywhere with static hosting
 
-## API Routes
+## Deployment Checklist
 
-### Redirect
-- `GET /r/:shortCode` - Redirect to original URL
-
-### User Routes
-- `/dashboard` - User dashboard
-- `/dashboard/links` - All user links
-
-### Admin Routes
-- `/admin` - Statistics
-- `/admin/users` - User management
-- `/admin/shortlinks` - All shortlinks
-
-## Database Schema
-
-### user_roles
-```sql
-- id (UUID, primary key)
-- user_id (UUID, references auth.users)
-- role (TEXT: 'user' | 'admin')
-- created_at, updated_at
-```
-
-### shortlists
-```sql
-- id, user_id
-- name, description
-- created_at, updated_at
-```
-
-### shortlinks
-```sql
-- id, user_id, shortlist_id
-- short_code (UNIQUE)
-- original_url, title, description
-- click_count
-- created_at, updated_at
-```
-
-### shortlink_clicks
-```sql
-- id, shortlink_id
-- clicked_at
-- user_agent, ip_address
-```
-
-## Security
-
-- All user data protected by Row Level Security
-- Users can only access their own data
-- Admins have global access
-- Passwords securely hashed by Supabase
-- Environment variables not exposed to client
-
-## Future Enhancements
-
-- Custom short codes
-- Link expiration
-- QR code generation
-- Advanced analytics (geography, device type)
-- Bulk link management
-- API for programmatic access
-- Dark mode
-- Notifications
+- [ ] Push code to GitHub
+- [ ] Deploy to Railway
+- [ ] Add custom domain (optional)
+- [ ] Configure Telegram backups
+- [ ] Test login with admin credentials
+- [ ] Create first shortlist
+- [ ] Add first shortlink
+- [ ] Test redirect
+- [ ] Send first backup
 
 ## Support
 
-For issues or questions, create an issue in your GitHub repository.
+For deployment help, see [DEPLOYMENT.md](./DEPLOYMENT.md)
 
 ## License
 

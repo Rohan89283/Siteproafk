@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getShortlinks, createShortlink, getShortlists } from '../lib/shortlinks'
+import { getShortlinks, addShortlink, getShortlists, getShortlinkByCode } from '../lib/localStorage'
 import ShortlinkItem from './ShortlinkItem'
 import './ShortlinksView.css'
 
-function ShortlinksView({ userId }) {
+function ShortlinksView() {
   const { shortlistId } = useParams()
   const navigate = useNavigate()
   const [shortlist, setShortlist] = useState(null)
@@ -22,13 +22,12 @@ function ShortlinksView({ userId }) {
     loadData()
   }, [shortlistId])
 
-  const loadData = async () => {
+  const loadData = () => {
     setLoading(true)
     setError('')
 
-    // Load shortlist details
-    const { data: shortlistsData } = await getShortlists(userId)
-    const currentShortlist = shortlistsData?.find(s => s.id === shortlistId)
+    const shortlistsData = getShortlists()
+    const currentShortlist = shortlistsData.find(s => s.id === shortlistId)
 
     if (!currentShortlist) {
       navigate('/dashboard')
@@ -37,13 +36,8 @@ function ShortlinksView({ userId }) {
 
     setShortlist(currentShortlist)
 
-    // Load shortlinks
-    const { data, error } = await getShortlinks(shortlistId)
-    if (error) {
-      setError(error.message)
-    } else {
-      setShortlinks(data || [])
-    }
+    const data = getShortlinks(shortlistId)
+    setShortlinks(data || [])
     setLoading(false)
   }
 
