@@ -3,6 +3,7 @@ import { signOut } from '../lib/auth'
 import AdminStats from '../components/AdminStats'
 import AdminUsers from '../components/AdminUsers'
 import AdminShortlinks from '../components/AdminShortlinks'
+import ProfileSidebar from '../components/ProfileSidebar'
 import './AdminDashboard.css'
 
 function AdminDashboard({ user, onAuthChange }) {
@@ -29,21 +30,7 @@ function AdminDashboard({ user, onAuthChange }) {
         </div>
 
         <div className="nav-user">
-          <div className="user-info">
-            <div className="user-avatar admin">
-              {user.username.charAt(0).toUpperCase()}
-            </div>
-            <div className="user-details">
-              <span className="user-email">{user.username}</span>
-              <span className="user-role badge badge-warning">Admin</span>
-            </div>
-          </div>
-          <button onClick={handleSignOut} className="btn btn-secondary">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4m7 14l5-5-5-5m5 5H9" />
-            </svg>
-            Sign Out
-          </button>
+          <ProfileSidebar user={user} onSignOut={handleSignOut} isAdmin={true} />
         </div>
       </nav>
 

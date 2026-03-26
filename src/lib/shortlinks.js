@@ -113,15 +113,13 @@ export const getShortlinkByCode = async (code) => {
   }
 };
 
-export const createShortlink = async (shortlistId, destinationUrl, customCode = null) => {
+export const createShortlink = async (destinationUrl, customCode = null, shortlistId = null) => {
   try {
     const user = getCurrentUser();
     if (!user) throw new Error('Not authenticated');
 
-    // Generate code if not provided
     let code = customCode;
     if (!code) {
-      // Generate unique code
       let isUnique = false;
       while (!isUnique) {
         code = generateShortCode();
@@ -134,14 +132,19 @@ export const createShortlink = async (shortlistId, destinationUrl, customCode = 
       }
     }
 
+    const insertData = {
+      short_code: code,
+      original_url: destinationUrl,
+      user_id: user.id
+    };
+
+    if (shortlistId) {
+      insertData.shortlist_id = shortlistId;
+    }
+
     const { data, error } = await supabase
       .from('shortlinks')
-      .insert([{
-        short_code: code,
-        original_url: destinationUrl,
-        shortlist_id: shortlistId,
-        user_id: user.id
-      }])
+      .insert([insertData])
       .select()
       .single();
 
