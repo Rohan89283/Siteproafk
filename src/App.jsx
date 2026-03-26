@@ -1,20 +1,36 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { getCurrentUser, initializeAuth } from './lib/auth'
+import { getShortlinkByCode, incrementClicks } from './lib/shortlinks'
 import Auth from './pages/Auth'
 import UserDashboard from './pages/UserDashboard'
 import AdminDashboard from './pages/AdminDashboard'
-import Redirect from './pages/Redirect'
+
+function RedirectHandler() {
+  const { shortCode } = useParams()
+
+  useEffect(() => {
+    const redirect = async () => {
+      const { data } = await getShortlinkByCode(shortCode)
+      if (data) {
+        incrementClicks(data.id)
+        window.location.href = data.original_url
+      } else {
+        window.location.href = '/auth'
+      }
+    }
+    redirect()
+  }, [shortCode])
+
+  return null
+}
 
 function App() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Initialize auth on app load
     initializeAuth()
-
-    // Check current session
     const currentUser = getCurrentUser()
     setUser(currentUser)
     setLoading(false)
@@ -37,16 +53,13 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Public redirect route */}
-        <Route path="/r/:shortCode" element={<Redirect />} />
+        <Route path="/r/:shortCode" element={<RedirectHandler />} />
 
-        {/* Auth route */}
         <Route
           path="/auth"
           element={user ? <Navigate to="/dashboard" /> : <Auth onAuthChange={handleAuthChange} />}
         />
 
-        {/* Dashboard routes */}
         <Route
           path="/dashboard/*"
           element={
@@ -62,13 +75,11 @@ function App() {
           }
         />
 
-        {/* Default redirect */}
         <Route
           path="/"
           element={<Navigate to={user ? "/dashboard" : "/auth"} />}
         />
 
-        {/* 404 */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
