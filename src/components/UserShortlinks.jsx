@@ -164,8 +164,11 @@ function UserShortlinks() {
             <ShortlinkItem
               key={link.id}
               shortlink={link}
+              shortUrl={shortUrl}
               onDelete={handleDelete}
-              onToggle={handleToggle}
+              onUpdate={(updatedLink) => {
+                setShortlinks(shortlinks.map(l => l.id === updatedLink.id ? updatedLink : l))
+              }}
             />
           ))}
         </div>
@@ -232,8 +235,10 @@ function UserShortlinks() {
                       checked={formData.redirectType === 'redirect'}
                       onChange={(e) => setFormData({ ...formData, redirectType: e.target.value })}
                     />
-                    <span>Redirect with Loading Page</span>
-                    <small>Shows a loading page before redirecting</small>
+                    <span>
+                      Redirect with Loading Page
+                      <small>Shows a loading page before redirecting</small>
+                    </span>
                   </label>
                   <label className="radio-label">
                     <input
@@ -243,8 +248,10 @@ function UserShortlinks() {
                       checked={formData.redirectType === 'direct'}
                       onChange={(e) => setFormData({ ...formData, redirectType: e.target.value })}
                     />
-                    <span>Direct Redirect</span>
-                    <small>Instantly redirects to destination</small>
+                    <span>
+                      Direct Redirect
+                      <small>Instantly redirects to destination</small>
+                    </span>
                   </label>
                 </div>
               </div>

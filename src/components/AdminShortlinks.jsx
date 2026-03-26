@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getShortlinks, createShortlink, toggleShortlink, deleteShortlink } from '../lib/shortlinks'
+import { getShortlinks, createShortlink, toggleShortlink, deleteShortlink, updateShortlink } from '../lib/shortlinks'
 import './AdminShortlinks.css'
 
 function AdminShortlinks() {
@@ -8,8 +8,12 @@ function AdminShortlinks() {
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingLink, setEditingLink] = useState(null)
   const [newLink, setNewLink] = useState({ url: '', customSlug: '', redirectType: 'redirect' })
+  const [editData, setEditData] = useState({ url: '', redirectType: 'redirect' })
   const [creating, setCreating] = useState(false)
+  const [updating, setUpdating] = useState(false)
 
   useEffect(() => {
     loadShortlinks()
@@ -69,6 +73,42 @@ function AdminShortlinks() {
       setShowCreateModal(false)
       setNewLink({ url: '', customSlug: '', redirectType: 'redirect' })
       setCreating(false)
+    }
+  }
+
+  const handleEditClick = (link) => {
+    setEditingLink(link)
+    setEditData({
+      url: link.original_url,
+      redirectType: link.redirect_type || 'redirect'
+    })
+    setShowEditModal(true)
+    setError('')
+  }
+
+  const handleUpdateShortlink = async (e) => {
+    e.preventDefault()
+    if (!editData.url.trim()) {
+      setError('Please enter a URL')
+      return
+    }
+
+    setUpdating(true)
+    setError('')
+    const { data, error: updateError } = await updateShortlink(editingLink.id, {
+      original_url: editData.url,
+      redirect_type: editData.redirectType
+    })
+
+    if (updateError) {
+      setError(updateError.message || 'Failed to update shortlink')
+      setUpdating(false)
+    } else {
+      setShortlinks(shortlinks.map(link => link.id === editingLink.id ? data : link))
+      setShowEditModal(false)
+      setEditingLink(null)
+      setEditData({ url: '', redirectType: 'redirect' })
+      setUpdating(false)
     }
   }
 
@@ -174,6 +214,16 @@ function AdminShortlinks() {
                 <div className="card-right">
                   <div className="link-actions">
                     <button
+                      onClick={() => handleEditClick(link)}
+                      className="btn-icon"
+                      title="Edit"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </button>
+                    <button
                       onClick={() => handleToggleActive(link)}
                       className={`btn-icon ${link.is_active ? 'active' : 'inactive'}`}
                       title={link.is_active ? 'Disable' : 'Enable'}
@@ -227,6 +277,7 @@ function AdminShortlinks() {
               </button>
             </div>
             <form onSubmit={handleCreateShortlink} className="modal-form">
+              {error && <div className="alert alert-error">{error}</div>}
               <div className="form-group">
                 <label htmlFor="url">Destination URL *</label>
                 <input
@@ -264,8 +315,10 @@ function AdminShortlinks() {
                       checked={newLink.redirectType === 'redirect'}
                       onChange={(e) => setNewLink({ ...newLink, redirectType: e.target.value })}
                     />
-                    <span>Redirect with Loading Page</span>
-                    <small>Shows a loading page before redirecting</small>
+                    <span>
+                      Redirect with Loading Page
+                      <small>Shows a loading page before redirecting</small>
+                    </span>
                   </label>
                   <label className="radio-label">
                     <input
@@ -275,8 +328,10 @@ function AdminShortlinks() {
                       checked={newLink.redirectType === 'direct'}
                       onChange={(e) => setNewLink({ ...newLink, redirectType: e.target.value })}
                     />
-                    <span>Direct Redirect</span>
-                    <small>Instantly redirects to destination</small>
+                    <span>
+                      Direct Redirect
+                      <small>Instantly redirects to destination</small>
+                    </span>
                   </label>
                 </div>
               </div>
@@ -286,6 +341,75 @@ function AdminShortlinks() {
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={creating}>
                   {creating ? 'Creating...' : 'Create Shortlink'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showEditModal && editingLink && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Edit Shortlink</h3>
+              <button onClick={() => setShowEditModal(false)} className="modal-close">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <form onSubmit={handleUpdateShortlink} className="modal-form">
+              {error && <div className="alert alert-error">{error}</div>}
+              <div className="form-group">
+                <label htmlFor="edit-url">Destination URL *</label>
+                <input
+                  id="edit-url"
+                  type="url"
+                  className="input"
+                  placeholder="https://example.com"
+                  value={editData.url}
+                  onChange={(e) => setEditData({ ...editData, url: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Redirect Type</label>
+                <div className="radio-group">
+                  <label className="radio-label">
+                    <input
+                      type="radio"
+                      name="editRedirectType"
+                      value="redirect"
+                      checked={editData.redirectType === 'redirect'}
+                      onChange={(e) => setEditData({ ...editData, redirectType: e.target.value })}
+                    />
+                    <span>
+                      Redirect with Loading Page
+                      <small>Shows a loading page before redirecting</small>
+                    </span>
+                  </label>
+                  <label className="radio-label">
+                    <input
+                      type="radio"
+                      name="editRedirectType"
+                      value="direct"
+                      checked={editData.redirectType === 'direct'}
+                      onChange={(e) => setEditData({ ...editData, redirectType: e.target.value })}
+                    />
+                    <span>
+                      Direct Redirect
+                      <small>Instantly redirects to destination</small>
+                    </span>
+                  </label>
+                </div>
+              </div>
+              <div className="modal-actions">
+                <button type="button" onClick={() => setShowEditModal(false)} className="btn btn-secondary">
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={updating}>
+                  {updating ? 'Updating...' : 'Save Changes'}
                 </button>
               </div>
             </form>

@@ -30,14 +30,14 @@ function Redirect() {
 
         // Check redirect type
         if (data.redirect_type === 'direct') {
-          // Direct redirect - instant
-          window.location.href = data.original_url
+          // Direct redirect - instant, no loading screen
+          window.location.replace(data.original_url)
         } else {
           // Redirect with loading page
           setStatus('redirecting')
           setTimeout(() => {
-            window.location.href = data.original_url
-          }, 1000)
+            window.location.replace(data.original_url)
+          }, 1500)
         }
       } catch (err) {
         setStatus('error')
@@ -54,21 +54,13 @@ function Redirect() {
     }
   }, [shortCode])
 
+  if (status === 'loading') {
+    return null
+  }
+
   return (
     <div className="redirect-container">
       <div className="redirect-card">
-        {status === 'loading' && (
-          <>
-            <div className="redirect-icon loading">
-              <svg className="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-              </svg>
-            </div>
-            <h1>Loading...</h1>
-            <p>Please wait while we find your link</p>
-          </>
-        )}
-
         {status === 'redirecting' && (
           <>
             <div className="redirect-icon success">
