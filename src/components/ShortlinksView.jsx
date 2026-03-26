@@ -13,7 +13,7 @@ function ShortlinksView() {
   const [showModal, setShowModal] = useState(false)
   const [formData, setFormData] = useState({
     originalUrl: '',
-    shortCode: '',
+    customSlug: '',
   })
   const [error, setError] = useState('')
 
@@ -64,12 +64,11 @@ function ShortlinksView() {
     e.preventDefault()
     setError('')
 
-    if (!formData.originalUrl.trim() || !formData.shortCode.trim()) {
-      setError('URL and short code are required')
+    if (!formData.originalUrl.trim()) {
+      setError('URL is required')
       return
     }
 
-    // Validate URL
     try {
       new URL(formData.originalUrl)
     } catch {
@@ -77,16 +76,15 @@ function ShortlinksView() {
       return
     }
 
-    // Validate short code (alphanumeric only)
-    if (!/^[a-z0-9]+$/i.test(formData.shortCode)) {
-      setError('Short code can only contain letters and numbers')
+    if (formData.customSlug && !/^[a-zA-Z0-9-_]+$/.test(formData.customSlug)) {
+      setError('Custom slug can only contain letters, numbers, hyphens, and underscores')
       return
     }
 
     const { data, error: createError } = await createShortlink(
-      shortlistId,
       formData.originalUrl,
-      formData.shortCode
+      formData.customSlug || null,
+      shortlistId
     )
 
     if (createError) {
@@ -94,7 +92,7 @@ function ShortlinksView() {
     } else {
       setShortlinks([data, ...shortlinks])
       setShowModal(false)
-      setFormData({ originalUrl: '', shortCode: '' })
+      setFormData({ originalUrl: '', customSlug: '' })
     }
   }
 
@@ -139,7 +137,7 @@ function ShortlinksView() {
         </div>
         <button
           onClick={() => {
-            setFormData({ ...formData, shortCode: generateShortCode() })
+            setFormData({ originalUrl: '', customSlug: '' })
             setShowModal(true)
           }}
           className="btn btn-primary"
@@ -207,28 +205,20 @@ function ShortlinksView() {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="shortCode">Short Code</label>
-                <div className="input-group">
-                  <span className="input-prefix">{shortUrl}/r/</span>
-                  <input
-                    id="shortCode"
-                    type="text"
-                    className="input input-with-prefix"
-                    placeholder="abc123"
-                    value={formData.shortCode}
-                    onChange={(e) => setFormData({ ...formData, shortCode: e.target.value })}
-                    required
-                    pattern="[a-zA-Z0-9]+"
-                    title="Only letters and numbers allowed"
-                  />
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => setFormData({ ...formData, shortCode: generateShortCode() })}
-                  >
-                    Generate
-                  </button>
-                </div>
+                <label htmlFor="customSlug">Custom Slug (Optional)</label>
+                <input
+                  id="customSlug"
+                  type="text"
+                  className="input"
+                  placeholder="my-custom-link"
+                  value={formData.customSlug}
+                  onChange={(e) => setFormData({ ...formData, customSlug: e.target.value })}
+                  pattern="[a-zA-Z0-9-_]+"
+                  title="Only letters, numbers, hyphens, and underscores allowed"
+                />
+                <small style={{ display: 'block', marginTop: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.8125rem' }}>
+                  Leave empty to generate a random code
+                </small>
               </div>
               <div className="modal-footer">
                 <button

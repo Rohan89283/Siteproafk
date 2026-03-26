@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getShortlinks, toggleShortlink, deleteShortlink } from '../lib/shortlinks'
+import { getShortlinks, createShortlink, toggleShortlink, deleteShortlink } from '../lib/shortlinks'
 import './AdminShortlinks.css'
 
 function AdminShortlinks() {
@@ -7,6 +7,9 @@ function AdminShortlinks() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [newLink, setNewLink] = useState({ url: '', customSlug: '' })
+  const [creating, setCreating] = useState(false)
 
   useEffect(() => {
     loadShortlinks()
@@ -47,6 +50,28 @@ function AdminShortlinks() {
     }
   }
 
+  const handleCreateShortlink = async (e) => {
+    e.preventDefault()
+    if (!newLink.url.trim()) {
+      setError('Please enter a URL')
+      return
+    }
+
+    setCreating(true)
+    setError('')
+    const { data, error: createError } = await createShortlink(newLink.url, newLink.customSlug || null)
+
+    if (createError) {
+      setError(createError.message || 'Failed to create shortlink')
+      setCreating(false)
+    } else {
+      setShortlinks([data, ...shortlinks])
+      setShowCreateModal(false)
+      setNewLink({ url: '', customSlug: '' })
+      setCreating(false)
+    }
+  }
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
@@ -78,12 +103,20 @@ function AdminShortlinks() {
           <h2>All Shortlinks</h2>
           <p>Manage all shortlinks across the platform</p>
         </div>
-        <button onClick={loadShortlinks} className="btn btn-secondary">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          Refresh
-        </button>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button onClick={() => setShowCreateModal(true)} className="btn btn-primary">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 4v16m8-8H4" />
+            </svg>
+            Create Shortlink
+          </button>
+          <button onClick={loadShortlinks} className="btn btn-secondary">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh
+          </button>
+        </div>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
@@ -181,6 +214,57 @@ function AdminShortlinks() {
           Showing {filteredShortlinks.length} of {shortlinks.length} shortlinks
         </p>
       </div>
+
+      {showCreateModal && (
+        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Create New Shortlink</h3>
+              <button onClick={() => setShowCreateModal(false)} className="modal-close">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <form onSubmit={handleCreateShortlink} className="modal-form">
+              <div className="form-group">
+                <label htmlFor="url">Destination URL *</label>
+                <input
+                  id="url"
+                  type="url"
+                  className="input"
+                  placeholder="https://example.com"
+                  value={newLink.url}
+                  onChange={(e) => setNewLink({ ...newLink, url: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="customSlug">Custom Slug (Optional)</label>
+                <input
+                  id="customSlug"
+                  type="text"
+                  className="input"
+                  placeholder="my-custom-link"
+                  value={newLink.customSlug}
+                  onChange={(e) => setNewLink({ ...newLink, customSlug: e.target.value })}
+                  pattern="[a-zA-Z0-9-_]+"
+                  title="Only letters, numbers, hyphens, and underscores allowed"
+                />
+                <small>Leave empty to generate a random code</small>
+              </div>
+              <div className="modal-actions">
+                <button type="button" onClick={() => setShowCreateModal(false)} className="btn btn-secondary">
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={creating}>
+                  {creating ? 'Creating...' : 'Create Shortlink'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

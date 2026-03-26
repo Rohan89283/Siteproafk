@@ -1,9 +1,15 @@
 import { useState, useEffect } from 'react'
 import { getStats } from '../lib/shortlinks'
+import { supabase } from '../lib/supabase'
 import './AdminStats.css'
 
 function AdminStats() {
   const [stats, setStats] = useState(null)
+  const [analytics, setAnalytics] = useState({
+    clicksByPlatform: {},
+    clicksByDevice: {},
+    clicksByBrowser: {}
+  })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -14,13 +20,43 @@ function AdminStats() {
   const loadStats = async () => {
     setLoading(true)
     setError('')
-    const { data, error: statsError } = await getStats()
-    if (statsError) {
-      setError(statsError.message || 'Failed to load statistics')
-    } else {
+
+    try {
+      const { data, error: statsError } = await getStats()
+      if (statsError) throw statsError
+
       setStats(data)
+
+      const { data: clickData, error: clickError } = await supabase
+        .from('click_analytics')
+        .select('*')
+
+      if (!clickError && clickData) {
+        const clicksByPlatform = clickData.reduce((acc, click) => {
+          const platform = click.platform || 'Unknown'
+          acc[platform] = (acc[platform] || 0) + 1
+          return acc
+        }, {})
+
+        const clicksByDevice = clickData.reduce((acc, click) => {
+          const device = click.device || 'Unknown'
+          acc[device] = (acc[device] || 0) + 1
+          return acc
+        }, {})
+
+        const clicksByBrowser = clickData.reduce((acc, click) => {
+          const browser = click.browser || 'Unknown'
+          acc[browser] = (acc[browser] || 0) + 1
+          return acc
+        }, {})
+
+        setAnalytics({ clicksByPlatform, clicksByDevice, clicksByBrowser })
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to load statistics')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   if (loading) {
@@ -102,6 +138,56 @@ function AdminStats() {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="analytics-grid">
+        <div className="analytics-card">
+          <h3>Clicks by Platform</h3>
+          <div className="analytics-list">
+            {Object.keys(analytics.clicksByPlatform).length > 0 ? (
+              Object.entries(analytics.clicksByPlatform).map(([platform, count]) => (
+                <div key={platform} className="analytics-item">
+                  <span className="analytics-label">{platform}</span>
+                  <span className="analytics-value">{count}</span>
+                </div>
+              ))
+            ) : (
+              <p className="empty-text">No data yet</p>
+            )}
+          </div>
+        </div>
+
+        <div className="analytics-card">
+          <h3>Clicks by Device</h3>
+          <div className="analytics-list">
+            {Object.keys(analytics.clicksByDevice).length > 0 ? (
+              Object.entries(analytics.clicksByDevice).map(([device, count]) => (
+                <div key={device} className="analytics-item">
+                  <span className="analytics-label">{device}</span>
+                  <span className="analytics-value">{count}</span>
+                </div>
+              ))
+            ) : (
+              <p className="empty-text">No data yet</p>
+            )}
+          </div>
+        </div>
+
+        <div className="analytics-card">
+          <h3>Clicks by Browser</h3>
+          <div className="analytics-list">
+            {Object.keys(analytics.clicksByBrowser).length > 0 ? (
+              Object.entries(analytics.clicksByBrowser).map(([browser, count]) => (
+                <div key={browser} className="analytics-item">
+                  <span className="analytics-label">{browser}</span>
+                  <span className="analytics-value">{count}</span>
+                </div>
+              ))
+            ) : (
+              <p className="empty-text">No data yet</p>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="stats-insights">

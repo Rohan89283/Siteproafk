@@ -106,6 +106,10 @@
     font-size: 0.875rem;
   }
 
+  .admin-tab .tab-label {
+    display: none;
+  }
+
   .admin-content {
     padding: 1rem;
   }
