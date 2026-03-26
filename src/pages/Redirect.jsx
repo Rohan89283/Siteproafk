@@ -25,26 +25,10 @@ function Redirect() {
           return
         }
 
-        const redirectType = data.redirect_type || 'redirect'
         const targetUrl = data.original_url
 
-        if (redirectType === 'instant') {
-          window.location.href = targetUrl
-          incrementClicks(data.id).catch(() => {})
-        } else if (redirectType === 'direct') {
-          Promise.race([
-            incrementClicks(data.id),
-            new Promise(resolve => setTimeout(resolve, 500))
-          ]).finally(() => {
-            window.location.href = targetUrl
-          })
-        } else {
-          incrementClicks(data.id).catch(() => {})
-          setStatus('redirecting')
-          setTimeout(() => {
-            window.location.href = targetUrl
-          }, 800)
-        }
+        incrementClicks(data.id)
+        window.location.href = targetUrl
       } catch (err) {
         setStatus('error')
         setError('An error occurred')
