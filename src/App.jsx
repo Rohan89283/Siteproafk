@@ -13,14 +13,10 @@ function RedirectHandler() {
     const redirect = async () => {
       const { data } = await getShortlinkByCode(shortCode)
       if (data) {
-        if (data.redirect_type === 'instant') {
-          window.location.replace(data.original_url)
-        } else {
-          incrementClicks(data.id)
-          window.location.href = data.original_url
-        }
+        incrementClicks(data.id)
+        window.location.replace(data.original_url)
       } else {
-        window.location.href = '/auth'
+        window.location.href = '/'
       }
     }
     redirect()
