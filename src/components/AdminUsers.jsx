@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createUser, deleteUser } from '../lib/auth'
 import { getAllUsers } from '../lib/shortlinks'
+import UserShortlinksModal from './UserShortlinksModal'
 import './AdminUsers.css'
 
 function AdminUsers() {
@@ -9,6 +10,7 @@ function AdminUsers() {
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [showModal, setShowModal] = useState(false)
+  const [selectedUser, setSelectedUser] = useState(null)
   const [formData, setFormData] = useState({ username: '', password: '', role: 'user' })
 
   useEffect(() => {
@@ -161,12 +163,24 @@ function AdminUsers() {
                   </td>
                   <td>{formatDate(user.created_at)}</td>
                   <td>
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleDeleteUser(user.id)}
-                    >
-                      Delete
-                    </button>
+                    <div className="table-actions">
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => setSelectedUser(user)}
+                        title="View shortlinks"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
+                        Links
+                      </button>
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDeleteUser(user.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -240,6 +254,13 @@ function AdminUsers() {
             </form>
           </div>
         </div>
+      )}
+
+      {selectedUser && (
+        <UserShortlinksModal
+          user={selectedUser}
+          onClose={() => setSelectedUser(null)}
+        />
       )}
     </div>
   )

@@ -28,11 +28,17 @@ function Redirect() {
         // Increment click count
         await incrementClicks(data.id)
 
-        // Redirect to original URL
-        setStatus('redirecting')
-        setTimeout(() => {
+        // Check redirect type
+        if (data.redirect_type === 'direct') {
+          // Direct redirect - instant
           window.location.href = data.original_url
-        }, 1000)
+        } else {
+          // Redirect with loading page
+          setStatus('redirecting')
+          setTimeout(() => {
+            window.location.href = data.original_url
+          }, 1000)
+        }
       } catch (err) {
         setStatus('error')
         setError('An error occurred')

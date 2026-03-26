@@ -8,7 +8,7 @@ function AdminShortlinks() {
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [newLink, setNewLink] = useState({ url: '', customSlug: '' })
+  const [newLink, setNewLink] = useState({ url: '', customSlug: '', redirectType: 'redirect' })
   const [creating, setCreating] = useState(false)
 
   useEffect(() => {
@@ -59,7 +59,7 @@ function AdminShortlinks() {
 
     setCreating(true)
     setError('')
-    const { data, error: createError } = await createShortlink(newLink.url, newLink.customSlug || null)
+    const { data, error: createError } = await createShortlink(newLink.url, newLink.customSlug || null, null, newLink.redirectType)
 
     if (createError) {
       setError(createError.message || 'Failed to create shortlink')
@@ -67,7 +67,7 @@ function AdminShortlinks() {
     } else {
       setShortlinks([data, ...shortlinks])
       setShowCreateModal(false)
-      setNewLink({ url: '', customSlug: '' })
+      setNewLink({ url: '', customSlug: '', redirectType: 'redirect' })
       setCreating(false)
     }
   }
@@ -252,6 +252,33 @@ function AdminShortlinks() {
                   title="Only letters, numbers, hyphens, and underscores allowed"
                 />
                 <small>Leave empty to generate a random code</small>
+              </div>
+              <div className="form-group">
+                <label>Redirect Type</label>
+                <div className="radio-group">
+                  <label className="radio-label">
+                    <input
+                      type="radio"
+                      name="redirectType"
+                      value="redirect"
+                      checked={newLink.redirectType === 'redirect'}
+                      onChange={(e) => setNewLink({ ...newLink, redirectType: e.target.value })}
+                    />
+                    <span>Redirect with Loading Page</span>
+                    <small>Shows a loading page before redirecting</small>
+                  </label>
+                  <label className="radio-label">
+                    <input
+                      type="radio"
+                      name="redirectType"
+                      value="direct"
+                      checked={newLink.redirectType === 'direct'}
+                      onChange={(e) => setNewLink({ ...newLink, redirectType: e.target.value })}
+                    />
+                    <span>Direct Redirect</span>
+                    <small>Instantly redirects to destination</small>
+                  </label>
+                </div>
               </div>
               <div className="modal-actions">
                 <button type="button" onClick={() => setShowCreateModal(false)} className="btn btn-secondary">

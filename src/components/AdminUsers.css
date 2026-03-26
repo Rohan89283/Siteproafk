@@ -20,6 +20,12 @@
   font-size: 0.875rem;
 }
 
+.table-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
 .users-header h2 {
   font-size: 1.75rem;
   color: var(--text-primary);

@@ -7,7 +7,7 @@ function UserShortlinks() {
   const [shortlinks, setShortlinks] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
-  const [formData, setFormData] = useState({ url: '', customSlug: '' })
+  const [formData, setFormData] = useState({ url: '', customSlug: '', redirectType: 'redirect' })
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
@@ -54,7 +54,8 @@ function UserShortlinks() {
     const { data, error: createError } = await createShortlink(
       formData.url,
       formData.customSlug || null,
-      null
+      null,
+      formData.redirectType
     )
 
     if (createError) {
@@ -63,7 +64,7 @@ function UserShortlinks() {
     } else {
       setShortlinks([data, ...shortlinks])
       setShowModal(false)
-      setFormData({ url: '', customSlug: '' })
+      setFormData({ url: '', customSlug: '', redirectType: 'redirect' })
       setCreating(false)
     }
   }
@@ -218,6 +219,34 @@ function UserShortlinks() {
                   />
                 </div>
                 <small>Leave empty to generate a random code</small>
+              </div>
+
+              <div className="form-group">
+                <label>Redirect Type</label>
+                <div className="radio-group">
+                  <label className="radio-label">
+                    <input
+                      type="radio"
+                      name="redirectType"
+                      value="redirect"
+                      checked={formData.redirectType === 'redirect'}
+                      onChange={(e) => setFormData({ ...formData, redirectType: e.target.value })}
+                    />
+                    <span>Redirect with Loading Page</span>
+                    <small>Shows a loading page before redirecting</small>
+                  </label>
+                  <label className="radio-label">
+                    <input
+                      type="radio"
+                      name="redirectType"
+                      value="direct"
+                      checked={formData.redirectType === 'direct'}
+                      onChange={(e) => setFormData({ ...formData, redirectType: e.target.value })}
+                    />
+                    <span>Direct Redirect</span>
+                    <small>Instantly redirects to destination</small>
+                  </label>
+                </div>
               </div>
 
               <div className="modal-actions">

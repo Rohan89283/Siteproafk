@@ -6,6 +6,7 @@ function ShortlinkItem({ shortlink, shortUrl, onDelete, onUpdate }) {
   const [showEdit, setShowEdit] = useState(false)
   const [editData, setEditData] = useState({
     originalUrl: shortlink.original_url,
+    redirectType: shortlink.redirect_type || 'redirect',
   })
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
@@ -35,6 +36,7 @@ function ShortlinkItem({ shortlink, shortUrl, onDelete, onUpdate }) {
 
     const { data, error: updateError } = await updateShortlink(shortlink.id, {
       original_url: editData.originalUrl,
+      redirect_type: editData.redirectType,
     })
 
     if (updateError) {
@@ -188,7 +190,7 @@ function ShortlinkItem({ shortlink, shortUrl, onDelete, onUpdate }) {
           {error && <div className="alert alert-error">{error}</div>}
           <form onSubmit={handleUpdate}>
             <div className="form-group">
-              <label>Original URL</label>
+              <label>Destination URL</label>
               <input
                 type="url"
                 className="input"
@@ -196,6 +198,42 @@ function ShortlinkItem({ shortlink, shortUrl, onDelete, onUpdate }) {
                 onChange={(e) => setEditData({ ...editData, originalUrl: e.target.value })}
                 required
               />
+              <small>You can change the destination URL</small>
+            </div>
+            <div className="form-group">
+              <label>Redirect Type</label>
+              <div className="radio-group">
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="redirectType"
+                    value="redirect"
+                    checked={editData.redirectType === 'redirect'}
+                    onChange={(e) => setEditData({ ...editData, redirectType: e.target.value })}
+                  />
+                  <span>Redirect with Loading Page</span>
+                  <small>Shows a loading page before redirecting</small>
+                </label>
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="redirectType"
+                    value="direct"
+                    checked={editData.redirectType === 'direct'}
+                    onChange={(e) => setEditData({ ...editData, redirectType: e.target.value })}
+                  />
+                  <span>Direct Redirect</span>
+                  <small>Instantly redirects to destination</small>
+                </label>
+              </div>
+            </div>
+            <div className="info-box">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+              <span>The short URL cannot be changed after creation</span>
             </div>
             <div className="form-actions">
               <button

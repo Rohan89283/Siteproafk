@@ -113,7 +113,7 @@ export const getShortlinkByCode = async (code) => {
   }
 };
 
-export const createShortlink = async (destinationUrl, customCode = null, shortlistId = null) => {
+export const createShortlink = async (destinationUrl, customCode = null, shortlistId = null, redirectType = 'redirect') => {
   try {
     const user = getCurrentUser();
     if (!user) throw new Error('Not authenticated');
@@ -135,7 +135,8 @@ export const createShortlink = async (destinationUrl, customCode = null, shortli
     const insertData = {
       short_code: code,
       original_url: destinationUrl,
-      user_id: user.id
+      user_id: user.id,
+      redirect_type: redirectType
     };
 
     if (shortlistId) {
@@ -260,6 +261,41 @@ export const getAllUsers = async () => {
       .from('app_users')
       .select('id, username, role, created_at')
       .order('created_at', { ascending: false});
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+// Get all shortlinks (admin can see all, users see only theirs)
+export const getAllShortlinks = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('shortlinks')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+// Get shortlinks by user (admin only - to view user shortlinks)
+export const getShortlinksByUser = async (userId) => {
+  try {
+    if (!isAdmin()) {
+      throw new Error('Only admins can view other users shortlinks');
+    }
+
+    const { data, error } = await supabase
+      .from('shortlinks')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
     return { data, error: null };
