@@ -55,7 +55,17 @@ function Redirect() {
   }, [shortCode])
 
   if (status === 'loading') {
-    return null
+    return (
+      <div style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'white',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+      </div>
+    )
   }
 
   return (

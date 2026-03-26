@@ -190,9 +190,31 @@ export const deleteShortlink = async (id) => {
   }
 };
 
+const detectDevice = (userAgent) => {
+  if (/mobile/i.test(userAgent)) return 'Mobile';
+  if (/tablet|ipad/i.test(userAgent)) return 'Tablet';
+  return 'Desktop';
+};
+
+const detectBrowser = (userAgent) => {
+  if (userAgent.includes('Chrome')) return 'Chrome';
+  if (userAgent.includes('Safari')) return 'Safari';
+  if (userAgent.includes('Firefox')) return 'Firefox';
+  if (userAgent.includes('Edge')) return 'Edge';
+  return 'Other';
+};
+
+const detectPlatform = (userAgent) => {
+  if (/windows/i.test(userAgent)) return 'Windows';
+  if (/mac/i.test(userAgent)) return 'macOS';
+  if (/linux/i.test(userAgent)) return 'Linux';
+  if (/android/i.test(userAgent)) return 'Android';
+  if (/ios|iphone|ipad/i.test(userAgent)) return 'iOS';
+  return 'Other';
+};
+
 export const incrementClicks = async (id) => {
   try {
-    // Get current click count
     const { data: link } = await supabase
       .from('shortlinks')
       .select('click_count')
@@ -201,11 +223,27 @@ export const incrementClicks = async (id) => {
 
     if (!link) return;
 
-    // Increment
     await supabase
       .from('shortlinks')
       .update({ click_count: (link.click_count || 0) + 1 })
       .eq('id', id);
+
+    const userAgent = navigator.userAgent;
+    const analyticsData = {
+      shortlink_id: id,
+      platform: detectPlatform(userAgent),
+      device: detectDevice(userAgent),
+      browser: detectBrowser(userAgent),
+      user_agent: userAgent,
+      referrer: document.referrer || 'Direct',
+      language: navigator.language || 'Unknown',
+      screen_resolution: `${window.screen.width}x${window.screen.height}`,
+      timestamp: new Date().toISOString()
+    };
+
+    await supabase
+      .from('click_analytics')
+      .insert([analyticsData]);
 
   } catch (error) {
     console.error('Error incrementing clicks:', error);
