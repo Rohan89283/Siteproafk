@@ -26,23 +26,24 @@ function Redirect() {
         }
 
         const redirectType = data.redirect_type || 'redirect'
+        const targetUrl = data.original_url
 
         if (redirectType === 'instant') {
-          // Instant redirect - fastest, redirect before even tracking
-          window.location.replace(data.original_url)
-          // Track in background (will execute if redirect takes time)
+          window.location.href = targetUrl
           incrementClicks(data.id).catch(() => {})
         } else if (redirectType === 'direct') {
-          // Direct redirect - track then redirect immediately
-          await incrementClicks(data.id)
-          window.location.replace(data.original_url)
+          Promise.race([
+            incrementClicks(data.id),
+            new Promise(resolve => setTimeout(resolve, 500))
+          ]).finally(() => {
+            window.location.href = targetUrl
+          })
         } else {
-          // Redirect with loading page
           incrementClicks(data.id).catch(() => {})
           setStatus('redirecting')
           setTimeout(() => {
-            window.location.replace(data.original_url)
-          }, 1500)
+            window.location.href = targetUrl
+          }, 800)
         }
       } catch (err) {
         setStatus('error')

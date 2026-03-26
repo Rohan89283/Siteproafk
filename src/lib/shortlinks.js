@@ -215,19 +215,6 @@ const detectPlatform = (userAgent) => {
 
 export const incrementClicks = async (id) => {
   try {
-    const { data: link } = await supabase
-      .from('shortlinks')
-      .select('click_count')
-      .eq('id', id)
-      .single();
-
-    if (!link) return;
-
-    await supabase
-      .from('shortlinks')
-      .update({ click_count: (link.click_count || 0) + 1 })
-      .eq('id', id);
-
     const userAgent = navigator.userAgent;
     const analyticsData = {
       shortlink_id: id,
@@ -241,9 +228,10 @@ export const incrementClicks = async (id) => {
       timestamp: new Date().toISOString()
     };
 
-    await supabase
-      .from('click_analytics')
-      .insert([analyticsData]);
+    Promise.all([
+      supabase.rpc('increment_shortlink_clicks', { shortlink_id: id }),
+      supabase.from('click_analytics').insert([analyticsData])
+    ]).catch(err => console.error('Error tracking:', err));
 
   } catch (error) {
     console.error('Error incrementing clicks:', error);
