@@ -49,6 +49,14 @@ function Auth() {
           </div>
           <h1>ShortLink Manager</h1>
           <p>Manage your links with ease</p>
+          {isLogin && (
+            <div className="admin-hint">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Admins login with their admin credentials here</span>
+            </div>
+          )}
         </div>
 
         <div className="auth-tabs">

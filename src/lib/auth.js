@@ -9,20 +9,18 @@ export const signUp = async (email, password) => {
 
     if (error) throw error
 
-    // Create user profile with default role
     if (data.user) {
-      const { error: profileError } = await supabase
-        .from('users')
+      const { error: roleError } = await supabase
+        .from('user_roles')
         .insert([
           {
-            id: data.user.id,
-            email: data.user.email,
+            user_id: data.user.id,
             role: 'user',
           },
         ])
 
-      if (profileError) {
-        console.error('Error creating user profile:', profileError)
+      if (roleError) {
+        console.error('Error creating user role:', roleError)
       }
     }
 
@@ -60,10 +58,10 @@ export const signOut = async () => {
 export const getUserRole = async (userId) => {
   try {
     const { data, error } = await supabase
-      .from('users')
+      .from('user_roles')
       .select('role')
-      .eq('id', userId)
-      .single()
+      .eq('user_id', userId)
+      .maybeSingle()
 
     if (error) throw error
 
