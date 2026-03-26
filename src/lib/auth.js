@@ -1,5 +1,6 @@
 import { supabase, setUserContext } from './supabase';
-import bcrypt from 'bcryptjs';
+
+const API_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/auth`;
 
 // Session storage
 const SESSION_KEY = 'shortlink_session';
@@ -22,24 +23,23 @@ const clearSession = () => {
 // Sign in with username and password
 export const signIn = async (username, password) => {
   try {
-    // Fetch user by username
-    const { data: user, error } = await supabase
-      .from('app_users')
-      .select('*')
-      .eq('username', username)
-      .maybeSingle();
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ action: 'signin', username, password }),
+    });
 
-    if (error) throw error;
-    if (!user) throw new Error('Invalid username or password');
+    const data = await response.json();
 
-    // Compare password with hash
-    const isValid = await bcrypt.compare(password, user.password_hash);
-    if (!isValid) throw new Error('Invalid username or password');
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to sign in');
+    }
 
-    // Set session
-    setSession(user);
-
-    return { user, error: null };
+    setSession(data.user);
+    return { user: data.user, error: null };
   } catch (error) {
     return { user: null, error };
   }
@@ -74,24 +74,28 @@ export const createUser = async (username, password, role = 'user') => {
       throw new Error('Only admins can create users');
     }
 
-    // Hash password
-    const password_hash = await bcrypt.hash(password, 10);
-
-    // Insert user
-    const { data, error } = await supabase
-      .from('app_users')
-      .insert([{
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        action: 'create_user',
         username,
-        password_hash,
+        password,
         role,
-        created_by: currentUser.id
-      }])
-      .select()
-      .single();
+        createdBy: currentUser.id
+      }),
+    });
 
-    if (error) throw error;
+    const result = await response.json();
 
-    return { data, error: null };
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to create user');
+    }
+
+    return { data: result.data, error: null };
   } catch (error) {
     return { data: null, error };
   }
@@ -121,14 +125,24 @@ export const deleteUser = async (userId) => {
 // Update password
 export const updatePassword = async (userId, newPassword) => {
   try {
-    const password_hash = await bcrypt.hash(newPassword, 10);
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        action: 'update_password',
+        userId,
+        newPassword
+      }),
+    });
 
-    const { error } = await supabase
-      .from('app_users')
-      .update({ password_hash })
-      .eq('id', userId);
+    const result = await response.json();
 
-    if (error) throw error;
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to update password');
+    }
 
     return { error: null };
   } catch (error) {
