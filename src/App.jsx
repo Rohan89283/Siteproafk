@@ -7,13 +7,40 @@ import AdminDashboard from './pages/AdminDashboard'
 
 function RedirectHandler() {
   const { shortCode } = useParams()
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const redirectUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/redirect/${shortCode}`
-    window.location.replace(redirectUrl)
+    const handleRedirect = async () => {
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/redirect?code=${shortCode}`
+        )
+
+        if (response.redirected) {
+          window.location.replace(response.url)
+        } else {
+          const data = await response.json()
+          if (data.url) {
+            window.location.replace(data.url)
+          } else {
+            window.location.replace('/')
+          }
+        }
+      } catch (error) {
+        console.error('Redirect error:', error)
+        window.location.replace('/')
+      }
+    }
+
+    handleRedirect()
   }, [shortCode])
 
-  return null
+  return (
+    <div className="loading-screen">
+      <div className="loader"></div>
+      <p>Redirecting...</p>
+    </div>
+  )
 }
 
 function App() {
