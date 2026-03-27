@@ -43,24 +43,24 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
 
     if (error || !shortlink) {
-      return new Response(
-        JSON.stringify({ error: 'Shortlink not found', url: appUrl }),
-        {
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+      return new Response(null, {
+        status: 302,
+        headers: {
+          ...corsHeaders,
+          'Location': appUrl,
+        },
+      });
     }
 
     supabase.rpc('increment_shortlink_clicks', { shortlink_id: shortlink.id }).catch(() => {});
 
-    return new Response(
-      JSON.stringify({ url: shortlink.original_url }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    return new Response(null, {
+      status: 302,
+      headers: {
+        ...corsHeaders,
+        'Location': shortlink.original_url,
+      },
+    });
   } catch (err) {
     console.error('Redirect error:', err);
     return new Response(
