@@ -26,7 +26,7 @@ export async function createShortlink(destinationUrl, customCode = null, userId)
     .from('shortlinks')
     .insert([{
       short_code: shortCode,
-      destination_url: destinationUrl,
+      original_url: destinationUrl,
       user_id: userId
     }])
     .select()
