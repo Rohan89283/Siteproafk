@@ -35,7 +35,7 @@ export default function ShortlinkCard({ shortlink, onEdit, onReload }) {
           {shortlink.is_active ? 'Active' : 'Inactive'}
         </span>
       </div>
-      <div className="shortlink-url">{shortlink.destination_url}</div>
+      <div className="shortlink-url">{shortlink.original_url}</div>
       <div className="shortlink-meta">
         <span className="meta-item">👆 {shortlink.click_count} clicks</span>
         <span className="meta-item">📅 {new Date(shortlink.created_at).toLocaleDateString()}</span>

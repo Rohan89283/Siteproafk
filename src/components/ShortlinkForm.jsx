@@ -3,7 +3,7 @@ import { createShortlink, updateShortlink } from '../lib/shortlinks'
 import './ShortlinkForm.css'
 
 export default function ShortlinkForm({ userId, shortlink = null, onClose, onSuccess }) {
-  const [destinationUrl, setDestinationUrl] = useState(shortlink?.destination_url || '')
+  const [destinationUrl, setDestinationUrl] = useState(shortlink?.original_url || '')
   const [customCode, setCustomCode] = useState(shortlink?.short_code || '')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -17,7 +17,7 @@ export default function ShortlinkForm({ userId, shortlink = null, onClose, onSuc
 
     try {
       if (isEditing) {
-        await updateShortlink(shortlink.id, { destination_url: destinationUrl })
+        await updateShortlink(shortlink.id, { original_url: destinationUrl })
       } else {
         await createShortlink(destinationUrl, customCode || null, userId)
       }
