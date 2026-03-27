@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { getCurrentUser, initializeAuth } from './lib/auth'
-import { getShortlinkByCode, incrementClicks } from './lib/shortlinks'
 import Auth from './pages/Auth'
 import UserDashboard from './pages/UserDashboard'
 import AdminDashboard from './pages/AdminDashboard'
@@ -10,16 +9,8 @@ function RedirectHandler() {
   const { shortCode } = useParams()
 
   useEffect(() => {
-    const redirect = async () => {
-      const { data } = await getShortlinkByCode(shortCode)
-      if (data) {
-        incrementClicks(data.id)
-        window.location.replace(data.original_url)
-      } else {
-        window.location.href = '/'
-      }
-    }
-    redirect()
+    const redirectUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/redirect/${shortCode}`
+    window.location.replace(redirectUrl)
   }, [shortCode])
 
   return null
