@@ -24,7 +24,7 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
     const { data: shortlink, error } = await supabase
@@ -34,22 +34,31 @@ Deno.serve(async (req: Request) => {
       .eq('is_active', true)
       .maybeSingle()
 
-    if (error || !shortlink) {
+    if (error) {
+      console.error('Database error:', error)
+      return new Response(
+        JSON.stringify({ error: 'Database error', details: error.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!shortlink) {
       return new Response(
         JSON.stringify({ error: 'Shortlink not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    supabase.rpc('increment_click_count', { shortlink_code: code }).catch(() => {})
+    await supabase.rpc('increment_click_count', { shortlink_code: code })
 
     return new Response(
       JSON.stringify({ url: shortlink.original_url }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
+    console.error('Unexpected error:', error)
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error', message: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
