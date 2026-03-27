@@ -1,68 +1,98 @@
-import { Routes, Route, Navigate, useLocation, Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { signOut } from '../lib/auth'
-import UserShortlinks from '../components/UserShortlinks'
-import UserStats from '../components/UserStats'
-import ProfileSidebar from '../components/ProfileSidebar'
-import './UserDashboard.css'
+import { getMyShortlinks } from '../lib/shortlinks'
+import ShortlinkForm from '../components/ShortlinkForm'
+import ShortlinkCard from '../components/ShortlinkCard'
+import ThemeToggle from '../components/ThemeToggle'
+import '../components/Dashboard.css'
 
-function UserDashboard({ user, onAuthChange }) {
-  const location = useLocation()
+export default function UserDashboard({ user, onAuthChange }) {
+  const [shortlinks, setShortlinks] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [editingLink, setEditingLink] = useState(null)
 
-  const handleSignOut = async () => {
+  useEffect(() => {
+    loadShortlinks()
+  }, [])
+
+  async function loadShortlinks() {
+    setLoading(true)
+    try {
+      const data = await getMyShortlinks(user.id)
+      setShortlinks(data)
+    } catch (error) {
+      console.error('Failed to load shortlinks:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleLogout() {
     await signOut()
     onAuthChange()
   }
 
-  const isLinksPage = location.pathname === '/dashboard'
-  const isStatsPage = location.pathname === '/dashboard/stats'
+  if (loading) {
+    return <div className="loading-screen"><div className="loader"></div></div>
+  }
+
+  const totalClicks = shortlinks.reduce((sum, link) => sum + (link.click_count || 0), 0)
+  const activeLinks = shortlinks.filter(link => link.is_active).length
 
   return (
-    <div className="dashboard-container">
-      <nav className="dashboard-nav">
-        <div className="nav-brand">
-          <div className="nav-logo">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-            </svg>
+    <div className="dashboard">
+      <header className="dashboard-header">
+        <div className="header-content">
+          <div className="header-left">
+            <h1>GojoSatoruAFK</h1>
+            <span className="role-badge user">User</span>
           </div>
-          <span>ShortLink Manager</span>
+          <div className="header-right">
+            <ThemeToggle />
+            <button onClick={handleLogout} className="btn-secondary">Sign Out</button>
+          </div>
         </div>
-
-        <div className="nav-user">
-          <ProfileSidebar user={user} onSignOut={handleSignOut} isAdmin={false} />
-        </div>
-      </nav>
-
-      <div className="dashboard-tabs">
-        <Link
-          to="/dashboard"
-          className={`dashboard-tab ${isLinksPage ? 'active' : ''}`}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-          </svg>
-          <span className="tab-label">My Links</span>
-        </Link>
-        <Link
-          to="/dashboard/stats"
-          className={`dashboard-tab ${isStatsPage ? 'active' : ''}`}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-          <span className="tab-label">Statistics</span>
-        </Link>
-      </div>
+      </header>
 
       <div className="dashboard-content">
-        <Routes>
-          <Route path="/" element={<UserShortlinks />} />
-          <Route path="/stats" element={<UserStats />} />
-          <Route path="*" element={<Navigate to="/dashboard" />} />
-        </Routes>
+        <main className="main-content full-width">
+          <div className="user-stats">
+            <div className="stat-card">
+              <div className="stat-icon">🔗</div>
+              <div className="stat-value">{shortlinks.length}</div>
+              <div className="stat-label">Total Links</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon">✅</div>
+              <div className="stat-value">{activeLinks}</div>
+              <div className="stat-label">Active Links</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon">👆</div>
+              <div className="stat-value">{totalClicks}</div>
+              <div className="stat-label">Total Clicks</div>
+            </div>
+          </div>
+
+          <div className="content-header">
+            <h2>My Shortlinks</h2>
+            <button onClick={() => setShowForm(true)} className="btn-primary">+ Create Shortlink</button>
+          </div>
+
+          <div className="shortlinks-grid">
+            {shortlinks.map(link => (
+              <ShortlinkCard key={link.id} shortlink={link} onEdit={setEditingLink} onReload={loadShortlinks} />
+            ))}
+            {shortlinks.length === 0 && (
+              <div className="empty-state"><p>No shortlinks created yet. Click "Create Shortlink" to get started!</p></div>
+            )}
+          </div>
+        </main>
       </div>
+
+      {showForm && <ShortlinkForm userId={user.id} onClose={() => setShowForm(false)} onSuccess={() => { setShowForm(false); loadShortlinks(); }} />}
+      {editingLink && <ShortlinkForm userId={user.id} shortlink={editingLink} onClose={() => setEditingLink(null)} onSuccess={() => { setEditingLink(null); loadShortlinks(); }} />}
     </div>
   )
 }
-
-export default UserDashboard

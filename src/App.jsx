@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { getCurrentUser, initializeAuth } from './lib/auth'
 import Auth from './pages/Auth'
@@ -9,38 +9,41 @@ function RedirectHandler() {
   const { shortCode } = useParams()
 
   useEffect(() => {
-    const handleRedirect = async () => {
+    async function redirect() {
       try {
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/redirect?code=${shortCode}`
         )
-
         const data = await response.json()
+
         if (data.url) {
           window.location.replace(data.url)
         } else {
           window.location.replace('/')
         }
       } catch (error) {
-        console.error('Redirect error:', error)
+        console.error('Redirect failed:', error)
         window.location.replace('/')
       }
     }
-
-    handleRedirect()
+    redirect()
   }, [shortCode])
 
-  return null
+  return (
+    <div className="loading-screen">
+      <div className="loader"></div>
+    </div>
+  )
 }
 
 function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <Routes>
         <Route path="/r/:shortCode" element={<RedirectHandler />} />
         <Route path="/*" element={<AuthenticatedApp />} />
       </Routes>
-    </Router>
+    </BrowserRouter>
   )
 }
 
@@ -71,33 +74,29 @@ function AuthenticatedApp() {
 
   return (
     <Routes>
-
-        <Route
-          path="/auth"
-          element={user ? <Navigate to="/dashboard" /> : <Auth onAuthChange={handleAuthChange} />}
-        />
-
-        <Route
-          path="/dashboard/*"
-          element={
-            user ? (
-              user.role === 'admin' ? (
-                <AdminDashboard user={user} onAuthChange={handleAuthChange} />
-              ) : (
-                <UserDashboard user={user} onAuthChange={handleAuthChange} />
-              )
+      <Route
+        path="/auth"
+        element={user ? <Navigate to="/dashboard" /> : <Auth onAuthChange={handleAuthChange} />}
+      />
+      <Route
+        path="/dashboard/*"
+        element={
+          user ? (
+            user.role === 'admin' ? (
+              <AdminDashboard user={user} onAuthChange={handleAuthChange} />
             ) : (
-              <Navigate to="/auth" />
+              <UserDashboard user={user} onAuthChange={handleAuthChange} />
             )
-          }
-        />
-
-        <Route
-          path="/"
-          element={<Navigate to={user ? "/dashboard" : "/auth"} />}
-        />
-
-        <Route path="*" element={<Navigate to="/" />} />
+          ) : (
+            <Navigate to="/auth" />
+          )
+        }
+      />
+      <Route
+        path="/"
+        element={<Navigate to={user ? "/dashboard" : "/auth"} />}
+      />
+      <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   )
 }

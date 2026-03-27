@@ -1,74 +1,56 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2.38.4";
+import { createClient } from 'npm:@supabase/supabase-js@2.38.4'
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
-};
-
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-const appUrl = 'https://gojosatoruafk.com';
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
+}
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, {
-      status: 200,
-      headers: corsHeaders,
-    });
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 200, headers: corsHeaders })
   }
 
   try {
-    const url = new URL(req.url);
-    const shortCode = url.searchParams.get('code');
+    const url = new URL(req.url)
+    const code = url.searchParams.get('code')
 
-    if (!shortCode) {
+    if (!code) {
       return new Response(
-        JSON.stringify({ error: 'Missing short code', url: appUrl }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+        JSON.stringify({ error: 'Missing short code' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    )
 
     const { data: shortlink, error } = await supabase
       .from('shortlinks')
-      .select('id, original_url, redirect_type')
-      .eq('short_code', shortCode)
+      .select('id, destination_url, is_active')
+      .eq('short_code', code)
       .eq('is_active', true)
-      .maybeSingle();
+      .maybeSingle()
 
     if (error || !shortlink) {
       return new Response(
-        JSON.stringify({ url: appUrl }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+        JSON.stringify({ error: 'Shortlink not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    supabase.rpc('increment_shortlink_clicks', { shortlink_id: shortlink.id }).catch(() => {});
+    supabase.rpc('increment_click_count', { shortlink_code: code }).catch(() => {})
 
     return new Response(
-      JSON.stringify({ url: shortlink.original_url }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
-  } catch (err) {
-    console.error('Redirect error:', err);
+      JSON.stringify({ url: shortlink.destination_url }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  } catch (error) {
     return new Response(
-      JSON.stringify({ error: 'Internal error', url: appUrl }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+      JSON.stringify({ error: 'Internal server error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   }
-});
+})
