@@ -1,76 +1,51 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.38.4";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
-};
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+const appUrl = Deno.env.get('VITE_APP_URL') || '/';
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
+  const url = new URL(req.url);
+  const shortCode = url.pathname.split('/').pop();
+
+  if (!shortCode) {
     return new Response(null, {
-      status: 200,
-      headers: corsHeaders,
+      status: 301,
+      headers: { "Location": appUrl },
     });
   }
 
   try {
-    const url = new URL(req.url);
-    const shortCode = url.pathname.split('/').pop();
-
-    if (!shortCode) {
-      return new Response(null, {
-        status: 302,
-        headers: {
-          ...corsHeaders,
-          "Location": Deno.env.get('VITE_APP_URL') || '/',
-        },
-      });
-    }
-
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!
-    );
-
-    const { data: shortlink, error } = await supabase
+    const { data: shortlink } = await supabase
       .from('shortlinks')
-      .select('id, original_url, is_active')
+      .select('id, original_url')
       .eq('short_code', shortCode)
       .eq('is_active', true)
       .maybeSingle();
 
-    if (error || !shortlink) {
+    if (!shortlink) {
       return new Response(null, {
-        status: 302,
-        headers: {
-          ...corsHeaders,
-          "Location": Deno.env.get('VITE_APP_URL') || '/',
-        },
+        status: 301,
+        headers: { "Location": appUrl },
       });
     }
 
-    supabase
-      .rpc('increment_clicks', { shortlink_id: shortlink.id })
-      .then(() => {})
-      .catch(() => {});
+    supabase.rpc('increment_shortlink_clicks', { shortlink_id: shortlink.id }).catch(() => {});
 
     return new Response(null, {
-      status: 302,
+      status: 301,
       headers: {
-        ...corsHeaders,
         "Location": shortlink.original_url,
-        "Cache-Control": "public, max-age=300",
+        "Cache-Control": "public, max-age=3600, immutable",
       },
     });
-  } catch (err) {
+  } catch {
     return new Response(null, {
-      status: 302,
-      headers: {
-        ...corsHeaders,
-        "Location": Deno.env.get('VITE_APP_URL') || '/',
-      },
+      status: 301,
+      headers: { "Location": appUrl },
     });
   }
 });
