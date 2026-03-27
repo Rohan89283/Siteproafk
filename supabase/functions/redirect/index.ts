@@ -44,17 +44,20 @@ Deno.serve(async (req: Request) => {
 
     if (!shortlink) {
       return new Response(
-        JSON.stringify({ error: 'Shortlink not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        '<html><body><h1>Shortlink not found</h1><p>Redirecting to home...</p><script>setTimeout(() => window.location.href = "https://gojosatoruafk.com", 2000)</script></body></html>',
+        { status: 404, headers: { 'Content-Type': 'text/html' } }
       )
     }
 
-    await supabase.rpc('increment_click_count', { shortlink_code: code })
+    supabase.rpc('increment_click_count', { shortlink_code: code }).then()
 
-    return new Response(
-      JSON.stringify({ url: shortlink.original_url }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    return new Response(null, {
+      status: 302,
+      headers: {
+        'Location': shortlink.original_url,
+        'Cache-Control': 'no-cache'
+      }
+    })
   } catch (error) {
     console.error('Unexpected error:', error)
     return new Response(
