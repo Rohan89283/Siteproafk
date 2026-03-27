@@ -3,11 +3,12 @@ import { signOut } from '../lib/auth'
 import AdminStats from '../components/AdminStats'
 import AdminUsers from '../components/AdminUsers'
 import AdminShortlinks from '../components/AdminShortlinks'
+import UserShortlinks from '../components/UserShortlinks'
 import ProfileSidebar from '../components/ProfileSidebar'
 import './AdminDashboard.css'
 
 function AdminDashboard({ user, onAuthChange }) {
-  const [activeTab, setActiveTab] = useState('stats')
+  const [activeTab, setActiveTab] = useState('mylinks')
 
   const handleSignOut = async () => {
     await signOut()
@@ -36,6 +37,15 @@ function AdminDashboard({ user, onAuthChange }) {
 
       <div className="admin-tabs">
         <button
+          className={`admin-tab ${activeTab === 'mylinks' ? 'active' : ''}`}
+          onClick={() => setActiveTab('mylinks')}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg>
+          <span className="tab-label">My Links</span>
+        </button>
+        <button
           className={`admin-tab ${activeTab === 'stats' ? 'active' : ''}`}
           onClick={() => setActiveTab('stats')}
         >
@@ -54,20 +64,21 @@ function AdminDashboard({ user, onAuthChange }) {
           <span className="tab-label">Users</span>
         </button>
         <button
-          className={`admin-tab ${activeTab === 'shortlinks' ? 'active' : ''}`}
-          onClick={() => setActiveTab('shortlinks')}
+          className={`admin-tab ${activeTab === 'alllinks' ? 'active' : ''}`}
+          onClick={() => setActiveTab('alllinks')}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            <path d="M4 6h16M4 10h16M4 14h16M4 18h16" />
           </svg>
-          <span className="tab-label">Shortlinks</span>
+          <span className="tab-label">All Links</span>
         </button>
       </div>
 
       <div className="admin-content">
+        {activeTab === 'mylinks' && <UserShortlinks />}
         {activeTab === 'stats' && <AdminStats />}
         {activeTab === 'users' && <AdminUsers />}
-        {activeTab === 'shortlinks' && <AdminShortlinks />}
+        {activeTab === 'alllinks' && <AdminShortlinks />}
       </div>
     </div>
   )
