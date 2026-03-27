@@ -9,9 +9,10 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 Deno.serve(async (req: Request) => {
   const url = new URL(req.url);
-  const shortCode = url.pathname.split('/').pop();
+  const pathParts = url.pathname.split('/').filter(p => p);
+  const shortCode = pathParts[pathParts.length - 1];
 
-  if (!shortCode) {
+  if (!shortCode || shortCode === 'redirect') {
     return new Response(null, {
       status: 301,
       headers: { "Location": appUrl },
