@@ -7,7 +7,6 @@ import AdminDashboard from './pages/AdminDashboard'
 
 function RedirectHandler() {
   const { shortCode } = useParams()
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const handleRedirect = async () => {
@@ -16,15 +15,11 @@ function RedirectHandler() {
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/redirect?code=${shortCode}`
         )
 
-        if (response.redirected) {
-          window.location.replace(response.url)
+        const data = await response.json()
+        if (data.url) {
+          window.location.replace(data.url)
         } else {
-          const data = await response.json()
-          if (data.url) {
-            window.location.replace(data.url)
-          } else {
-            window.location.replace('/')
-          }
+          window.location.replace('/')
         }
       } catch (error) {
         console.error('Redirect error:', error)
@@ -35,15 +30,21 @@ function RedirectHandler() {
     handleRedirect()
   }, [shortCode])
 
-  return (
-    <div className="loading-screen">
-      <div className="loader"></div>
-      <p>Redirecting...</p>
-    </div>
-  )
+  return null
 }
 
 function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/r/:shortCode" element={<RedirectHandler />} />
+        <Route path="/*" element={<AuthenticatedApp />} />
+      </Routes>
+    </Router>
+  )
+}
+
+function AuthenticatedApp() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -69,9 +70,7 @@ function App() {
   }
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/r/:shortCode" element={<RedirectHandler />} />
+    <Routes>
 
         <Route
           path="/auth"
@@ -99,8 +98,7 @@ function App() {
         />
 
         <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </Router>
+    </Routes>
   )
 }
 
