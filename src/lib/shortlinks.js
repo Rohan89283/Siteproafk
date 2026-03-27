@@ -33,7 +33,8 @@ export async function createShortlink(destinationUrl, customCode = null, userId)
     .single()
 
   if (error) {
-    throw new Error('Failed to create shortlink')
+    console.error('Shortlink creation error:', error)
+    throw new Error(error.message || 'Failed to create shortlink')
   }
 
   return data
