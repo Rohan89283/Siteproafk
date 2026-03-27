@@ -7,31 +7,56 @@ import AdminDashboard from './pages/AdminDashboard'
 
 function RedirectHandler() {
   const { shortCode } = useParams()
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     async function redirect() {
+      if (!shortCode) {
+        setError('No shortcode provided')
+        setTimeout(() => window.location.replace('/'), 2000)
+        return
+      }
+
       try {
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/redirect?code=${shortCode}`
-        )
+        const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/redirect?code=${shortCode}`
+        console.log('Fetching redirect URL:', url)
+
+        const response = await fetch(url)
         const data = await response.json()
+
+        console.log('Redirect response:', data)
 
         if (data.url) {
           window.location.replace(data.url)
+        } else if (data.error) {
+          setError(data.error)
+          setTimeout(() => window.location.replace('/'), 2000)
         } else {
-          window.location.replace('/')
+          setError('Invalid shortlink')
+          setTimeout(() => window.location.replace('/'), 2000)
         }
       } catch (error) {
         console.error('Redirect failed:', error)
-        window.location.replace('/')
+        setError('Failed to load shortlink')
+        setTimeout(() => window.location.replace('/'), 2000)
       }
     }
     redirect()
   }, [shortCode])
 
+  if (error) {
+    return (
+      <div className="loading-screen">
+        <p style={{ color: '#ff4444', marginTop: '20px' }}>{error}</p>
+        <p style={{ fontSize: '14px', marginTop: '10px' }}>Redirecting to home...</p>
+      </div>
+    )
+  }
+
   return (
     <div className="loading-screen">
       <div className="loader"></div>
+      <p style={{ marginTop: '20px' }}>Redirecting...</p>
     </div>
   )
 }
