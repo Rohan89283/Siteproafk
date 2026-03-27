@@ -29,7 +29,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: shortlink, error } = await supabase
       .from('shortlinks')
-      .select('id, destination_url, is_active')
+      .select('id, original_url, is_active')
       .eq('short_code', code)
       .eq('is_active', true)
       .maybeSingle()
@@ -44,7 +44,7 @@ Deno.serve(async (req: Request) => {
     supabase.rpc('increment_click_count', { shortlink_code: code }).catch(() => {})
 
     return new Response(
-      JSON.stringify({ url: shortlink.destination_url }),
+      JSON.stringify({ url: shortlink.original_url }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
